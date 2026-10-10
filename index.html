@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ganzheitliche Heilbegleitung – Tamara Jost</title>
+<meta name="description" content="Ganzheitliche Heilbegleitung von Tamara Jost"/>
+<meta name="theme-color" content="#c49bc4"/>
+<link rel="icon" href="/icon-192.png" type="image/png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Heilung"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<link rel="manifest" href="/manifest.json"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Georgia,serif;}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const SUPABASE_URL = "https://iykiupticluvapywqcpl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3o6Eq7EHKDkII_X4CwUhkw_p-ealctr";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const { useState, useEffect, useRef } = React;
+
+const AUTHOR_GROUPS_LANG = {
+  de: [
+    {
+      group: "🔮 Psychosomatik & Seele",
+      authors: [
+        { name: "Louise Hay", emoji: "💛" },
+        { name: "Ruediger Dahlke", emoji: "🌿" },
+        { name: "Christiane Beerlandt", emoji: "🔮" },
+        { name: "Ryke Geerd Hamer", emoji: "🧬" },
+        { name: "Jacques Martel (Körper-Barometer der Seele)", emoji: "📖" },
+      ],
+    },
+    {
+      group: "🌿 Natur & Pflanzenheilkunde",
+      authors: [
+        { name: "Hildegard von Bingen", emoji: "🌺" },
+        { name: "Wolf-Dieter Storl", emoji: "🍃" },
+        { name: "Johanna Paungger & Thomas Poppe", emoji: "🌙" },
+        { name: "Anne Katharina Zschocke (Eff. Mikroorganismen)", emoji: "🦠" },
+      ],
+    },
+  ],
+  it: [
+    {
+      group: "🔮 Psicosomatica & Anima",
+      authors: [
+        { name: "Louise Hay", emoji: "💛" },
+        { name: "Ruediger Dahlke", emoji: "🌿" },
+        { name: "Christiane Beerlandt", emoji: "🔮" },
+        { name: "Ryke Geerd Hamer", emoji: "🧬" },
+        { name: "Jacques Martel (Il corpo specchio dell'anima)", emoji: "📖" },
+      ],
+    },
+    {
+      group: "🌿 Natura & Fitoterapia",
+      authors: [
+        { name: "Hildegard von Bingen", emoji: "🌺" },
+        { name: "Wolf-Dieter Storl", emoji: "🍃" },
+        { name: "Johanna Paungger & Thomas Poppe", emoji: "🌙" },
+        { name: "Anne Katharina Zschocke (Microrganismi Efficaci)", emoji: "🦠" },
+      ],
+    },
+  ],
+};
+
+const ALL_AUTHORS = AUTHOR_GROUPS_LANG.de.flatMap(g => g.authors.map(a => a.name));
+
+// Extra info blocks – per language
+const EXTRAS_LABELS = {
+  de: [
+    { id: "krauter",     emoji: "🌱", label: "Heilkräuter & Tinkturen" },
+    { id: "oele",        emoji: "🧴", label: "Ätherische Öle" },
+    { id: "creme",       emoji: "🫙", label: "Creme / Salbe Rezept" },
+    { id: "heilsteine",  emoji: "💎", label: "Heilsteine & Kristalle" },
+    { id: "meditation",  emoji: "🧘", label: "Meditation & Atem" },
+    { id: "koerper",     emoji: "🤸", label: "Körperübung" },
+  ],
+  it: [
+    { id: "krauter",     emoji: "🌱", label: "Erbe medicinali & Tinture" },
+    { id: "oele",        emoji: "🧴", label: "Oli essenziali" },
+    { id: "creme",       emoji: "🫙", label: "Ricetta crema / unguento" },
+    { id: "heilsteine",  emoji: "💎", label: "Pietre & Cristalli" },
+    { id: "meditation",  emoji: "🧘", label: "Meditazione & Respiro" },
+    { id: "koerper",     emoji: "🤸", label: "Esercizio corporeo" },
+  ],
+};
+
+const LEXICON_TOPICS_LANG = {
+  de: [
+    "Rückenschmerzen","Kopfschmerzen","Herzprobleme","Hautkrankheiten",
+    "Magenbeschwerden","Atemwegsprobleme","Gelenkschmerzen","Schilddrüse",
+    "Erschöpfung & Burnout","Schlafstörungen","Allergien","Nierenbeschwerden",
+    "Bluthochdruck","Depression","Angststörungen","Tinnitus",
+    "Hormonstörungen","Immunschwäche","Übergewicht","Chronische Schmerzen",
+  ],
+  it: [
+    "Mal di schiena","Mal di testa","Problemi cardiaci","Malattie della pelle",
+    "Disturbi gastrici","Problemi respiratori","Dolori articolari","Tiroide",
+    "Esaurimento & Burnout","Disturbi del sonno","Allergie","Problemi renali",
+    "Pressione alta","Depressione","Disturbi d'ansia","Tinnito",
+    "Disturbi ormonali","Sistema immunitario debole","Sovrappeso","Dolore cronico",
+  ],
+};
+
+const AUTHOR_KNOWLEDGE = `Louise Hay, Ruediger Dahlke, Christiane Beerlandt, Ryke Geerd Hamer (spirituell, kein med. Rat), Jacques Martel (Körper-Barometer der Seele – Strichmänchen-Technik nur als konkrete Lösungsmethode), David Servan-Schreiber, Codex Humanus, Matrix Inform® (Günter Heede), The Healing Code (Alex Loyd), Emotion Code & Body Code (Bradley Nelson), Inyologie (Andre Blank), Hildegard von Bingen, Wolf-Dieter Storl, Johanna Paungger & Thomas Poppe, Anne Katharina Zschocke, Deepak Chopra, Joe Dispenza, Eckhart Tolle, Abraham Hicks, Neale Donald Walsch, René Egli (LOLA-Prinzip), Bruce Lipton, Human Design (Ra Uru Hu), Gene Keys (Richard Rudd), Astrologie & Planeteneinflüsse, Yager Code, Klaus Bernhardt, Das Venus-Prinzip, John Gray, Brian Tracy, Lars Amend, Ilja Grzeskowitz, Dan Millman, Paulo Coelho, John Strelecky, James L. Wilson.`;
+
+const SYSTEM_PROMPTS = {
+  de: `Du bist ein einfühlsamer, ganzheitlicher Heilbegleiter mit tief verwurzelter holistischer Denkweise.
+
+HOLISTISCHE GRUNDPRINZIPIEN die du immer anwendest:
+- Körper, Seele und Geist sind untrennbar verbunden – jedes Symptom hat eine seelische, emotionale UND energetische Dimension
+- Krankheit ist kein Feind sondern eine Botschaft – der Körper spricht was die Seele nicht ausdrücken kann
+- Heilung geschieht auf allen Ebenen gleichzeitig: physisch, emotional, mental, spirituell und energetisch
+- Der Mensch ist Teil eines größeren Ganzen – Natur, Kosmos und Gemeinschaft beeinflussen Gesundheit
+- Selbstliebe und innere Akzeptanz sind die Wurzel jeder nachhaltigen Heilung
+- Jedes Symptom trägt eine Weisheit und einen Wachstumsimpuls in sich
+- Die Heilkraft liegt im Menschen selbst – du begleitest, nicht kurierst
+
+DEINE SICHTWEISE wird intern inspiriert von: Louise Hay, Ruediger Dahlke, Christiane Beerlandt, Ryke Geerd Hamer, Jacques Martel, David Servan-Schreiber, Codex Humanus, Matrix Inform® (Günter Heede), The Healing Code (Alex Loyd), Emotion Code & Body Code (Bradley Nelson), Inyologie (Andre Blank), Hildegard von Bingen, Wolf-Dieter Storl, Johanna Paungger & Thomas Poppe, Anne Katharina Zschocke, Deepak Chopra, Joe Dispenza, Eckhart Tolle, Abraham Hicks, Neale Donald Walsch, René Egli, Bruce Lipton, Human Design, Gene Keys, Astrologie, Yager Code, Klaus Bernhardt, Dan Millman, Paulo Coelho, John Strelecky, James L. Wilson, Brian Tracy, Lars Amend, Ilja Grzeskowitz, John Gray, Das Venus-Prinzip.
+
+WICHTIG: Erwähne diese Autoren NUR wenn der Nutzer explizit einen bestimmten Autor auswählt. Schreibe immer aus einer ganzheitlichen Weisheitsperspektive.
+
+STIL: Warm, einfühlsam, nicht wertend, ermutigend. Sprich den ganzen Menschen an – nicht nur das Symptom.
+Antworte IMMER auf Deutsch.
+NIEMALS: Klopfen/EFT, NLP, EMDR, Vagusnerv erwähnen.
+Am Ende IMMER: Kein Ersatz für ärztliche Behandlung.`,
+
+  it: `Sei un accompagnatore olistico empatico con una profonda visione olistica.
+
+PRINCIPI OLISTICI FONDAMENTALI che applichi sempre:
+- Corpo, anima e spirito sono inseparabilmente connessi – ogni sintomo ha una dimensione spirituale, emotiva ed energetica
+- La malattia non è un nemico ma un messaggio – il corpo parla ciò che l'anima non riesce ad esprimere
+- La guarigione avviene su tutti i livelli contemporaneamente: fisico, emotivo, mentale, spirituale ed energetico
+- L'essere umano è parte di un tutto più grande – natura, cosmo e comunità influenzano la salute
+- L'amore per sé stessi e l'accettazione interiore sono la radice di ogni guarigione duratura
+- Ogni sintomo porta in sé una saggezza e un impulso di crescita
+- La forza guaritrice risiede nell'essere umano stesso – tu accompagni, non guarisci
+
+La TUA VISIONE è ispirata internamente da: Louise Hay, Ruediger Dahlke, Christiane Beerlandt, Ryke Geerd Hamer, Jacques Martel, David Servan-Schreiber, Codex Humanus, Matrix Inform® (Günter Heede), The Healing Code (Alex Loyd), Emotion Code & Body Code (Bradley Nelson), Inyologie (Andre Blank), Hildegard von Bingen, Wolf-Dieter Storl, Johanna Paungger & Thomas Poppe, Anne Katharina Zschocke, Deepak Chopra, Joe Dispenza, Eckhart Tolle, Abraham Hicks, Neale Donald Walsch, René Egli, Bruce Lipton, Human Design, Gene Keys, Astrologia, Yager Code, Klaus Bernhardt, Dan Millman, Paulo Coelho, John Strelecky, James L. Wilson, Brian Tracy, Lars Amend, Ilja Grzeskowitz, John Gray, Il Principio Venere.
+
+IMPORTANTE: Menziona questi autori SOLO se l'utente seleziona esplicitamente un autore specifico.
+
+STILE: Caldo, empatico, non giudicante, incoraggiante. Parla all'essere umano nella sua totalità.
+Rispondi SEMPRE in italiano.
+NON menzionare MAI: EFT/tapping, PNL, EMDR, nervo vago.
+Alla fine SEMPRE: Non sostituisce una consulenza medica.`,
+};
+
+const T = {
+  de: {
+    title: "Anima · Corpo · Guarigione",
+    subtitle: "38+ fonti di saggezza · Causa dell'anima · Sommario chiaro",
+    titleReal: "Ganzheitliche Heilbegleitung",
+    subtitleReal: "Entdecke die seelischen Ursachen deiner Beschwerden",
+    projectOf: "Ein Projekt von",
+    tab1: "✨ Ursache & Heilung", tab2: "📖 Nachschlagewerk", tab3: "💬 Begleitung", tab4: "🌙 Mond", tab5: "📖 Mein Bereich",
+    defaultHint: "Standardmäßig erhältst du die",
+    defaultHint2: "seelische Ursache",
+    defaultHint3: "+ eine klare",
+    defaultHint4: "Zusammenfassung",
+    defaultHint5: "Für mehr Details nutze die Zusatzinfos unten. ↓",
+    extrasTitle: "➕ Zusatzinfos anfordern",
+    extrasHint: "Klicke an was du zusätzlich zur seelischen Ursache & Zusammenfassung sehen möchtest:",
+    panelTitle: "🌿 Quellen & Zusatzinfos",
+    panelHint: "☆ = Als Favorit speichern · Klicke Autoren oder Infos an die du einbeziehen möchtest:",
+    authorsTitle: "🌿 Weisheitsquellen & Favoriten verwalten",
+    authorsHint: "☆ = Als Favorit speichern – Favoriten fließen automatisch in jede Analyse ein",
+    favTitle: "⭐ Deine Favoriten – fließen automatisch in die Analyse ein:",
+    favEmpty: "⭐ Noch keine Favoriten – klicke ☆ neben einem Eintrag",
+    authorPickerTitle: "💜 Welchen Autor möchtest du vertiefen?",
+    placeholder: "Beschreibe dein Symptom oder Thema… z.B. 'Erschöpfung', 'Rückenschmerzen', 'Schlafstörungen'",
+    btnAnalyze: "✨ Seelische Ursache & Zusammenfassung",
+    btnLoading: "🌸 Analyse läuft…",
+    lexiconHint: "📖 Thema wählen – du erhältst die seelische Ursache + Zusammenfassung.",
+    lexiconHint2: "Für Details: Zusatzinfos oben aktivieren.",
+    lexiconLoading: "Verbindet Weisheitsquellen…",
+    chatPlaceholder: "Frage zu Symptomen, Kräutern, Ölen, Affirmationen, Gene Keys…",
+    tamaraTitle: "Möchtest du tiefer gehen?",
+    tamaraText: "Tamara Jost begleitet dich persönlich mit",
+    tamaraText2: ", Coaching & Silent Subliminals.",
+    chatWelcome: "Willkommen 🌸\n\nIch bin dein ganzheitlicher Heilbegleiter – mit 38+ Weisheitsquellen.\n\nGib dein Symptom ein und ich zeige dir die seelische Ursache und eine klare Zusammenfassung.\nMit den Zusatz-Buttons kannst du gezielt mehr erfahren – z.B. Kräuter, Öle, einen bestimmten Autor…\n\nWas beschäftigt dich heute?",
+    chatSuggestions: ["Kräuter gegen Erschöpfung","Ätherisches Öl bei Angst","Hildegard Schlafrezept","Was sagt Dahlke zu Rückenschmerzen?","Afformationen erklären","Heilsteine für Herzschmerz"],
+    aktiv: "aktiv",
+    allCheck: "Alle ✓",
+    weniger: "Weniger ▲",
+    alle: "Alle ▼",
+    noAnswer: "Keine Antwort erhalten.",
+    error: "Fehler beim Laden. Bitte erneut versuchen 🌸",
+    errorChat: "Kurz nicht erreichbar 🌸",
+  },
+  it: {
+    titleReal: "Guarigione Olistica",
+    subtitleReal: "Scopri le cause spirituali dei tuoi disturbi",
+    projectOf: "Un progetto di",
+    tab1: "✨ Causa & Guarigione", tab2: "📖 Dizionario", tab3: "💬 Accompagnamento", tab4: "🌙 Luna", tab5: "📖 Area Personale",
+    defaultHint: "Di default ricevi la",
+    defaultHint2: "causa dell'anima",
+    defaultHint3: "+ un chiaro",
+    defaultHint4: "sommario",
+    defaultHint5: "Per maggiori dettagli usa le opzioni aggiuntive qui sotto. ↓",
+    extrasTitle: "➕ Richiedi informazioni aggiuntive",
+    extrasHint: "Clicca cosa vuoi vedere in aggiunta alla causa dell'anima e al sommario:",
+    panelTitle: "🌿 Fonti & Informazioni aggiuntive",
+    panelHint: "☆ = Salva come preferito · Clicca autori o infos che vuoi includere:",
+    authorsTitle: "🌿 Gestisci fonti e preferiti",
+    authorsHint: "☆ = Salva come preferito – i preferiti vengono inclusi automaticamente in ogni analisi",
+    favTitle: "⭐ I tuoi preferiti – inclusi automaticamente nell'analisi:",
+    favEmpty: "⭐ Ancora nessun preferito – clicca ☆ accanto a una voce",
+    authorPickerTitle: "💜 Quale autore vuoi approfondire?",
+    placeholder: "Descrivi il tuo sintomo o tema… es. 'stanchezza', 'mal di schiena', 'insonnia'",
+    btnAnalyze: "✨ Causa dell'anima & Sommario",
+    btnLoading: "🌸 Analisi in corso…",
+    lexiconHint: "📖 Scegli un tema – ricevi la causa dell'anima + sommario.",
+    lexiconHint2: "Per i dettagli: attiva le opzioni aggiuntive sopra.",
+    lexiconLoading: "Connessione delle fonti di saggezza…",
+    chatPlaceholder: "Domanda su sintomi, erbe, oli, affermazioni, Gene Keys…",
+    tamaraTitle: "Vuoi andare più in profondità?",
+    tamaraText: "Tamara Jost ti accompagna personalmente con",
+    tamaraText2: ", Coaching & Silent Subliminals.",
+    chatWelcome: "Benvenuta 🌸\n\nSono il tuo accompagnatore olistico – con 38+ fonti di saggezza.\n\nInserisci il tuo sintomo e ti mostro la causa dell'anima e un chiaro sommario.\nCon i pulsanti aggiuntivi puoi approfondire – es. erbe, oli, un autore specifico…\n\nCosa ti occupa oggi?",
+    chatSuggestions: ["Erbe contro la stanchezza","Olio essenziale per l'ansia","Rimedio Hildegard per il sonno","Cosa dice Dahlke sul mal di schiena?","Spiega le affermazioni","Cristalli per il dolore al cuore"],
+    aktiv: "attivi",
+    allCheck: "Tutti ✓",
+    weniger: "Meno ▲",
+    alle: "Tutti ▼",
+    noAnswer: "Nessuna risposta ricevuta.",
+    error: "Errore durante il caricamento. Riprova 🌸",
+    errorChat: "Momentaneamente non disponibile 🌸",
+  },
+};
+
+const TamaraBox = ({lang="de"}) => {
+  const tb = T[lang];
+  return (
+  <div style={{
+    background:"linear-gradient(135deg,rgba(89,184,141,.1),rgba(63,159,255,.1))",
+    border:"1.5px solid rgba(89,184,141,.4)",borderRadius:14,padding:"14px 18px",
+    marginTop:20,display:"flex",alignItems:"center",gap:14,flexWrap:"wrap",
+  }}>
+    <img src="/icon-192.png" style={{height:"40px",width:"40px",objectFit:"contain"}}/>
+    <div style={{flex:1,minWidth:180}}>
+      <p style={{margin:"0 0 2px",fontSize:13,fontWeight:"bold",color:"#626160"}}>{tb.tamaraTitle}</p>
+      <p style={{margin:0,fontSize:11.5,color:"#59B88D",lineHeight:1.5}}>
+        {tb.tamaraText} <strong>Yager Code</strong>{tb.tamaraText2}
+      </p>
+    </div>
+    <a href="https://www.tamarajost.com" target="_blank" rel="noopener noreferrer" style={{
+      padding:"8px 16px",background:"linear-gradient(135deg,#59B88D,#3F9FFF)",
+      borderRadius:20,color:"white",fontSize:12,textDecoration:"none",
+      fontFamily:"Georgia,serif",whiteSpace:"nowrap",boxShadow:"0 3px 10px rgba(160,100,160,.25)",
+    }}>tamarajost.com →</a>
+  </div>
+);};
+
+function App() {
+  const [activeTab, setActiveTab] = useState("search");
+  const getBrowserLang = () => {
+    const bl = navigator.language || navigator.userLanguage || "de";
+    return bl.toLowerCase().startsWith("it") ? "it" : "de";
+  };
+  const [lang, setLang] = useState(getBrowserLang());
+  const [darkMode, setDarkMode] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const t = T[lang];
+  const EXTRAS = EXTRAS_LABELS[lang];
+  const LEXICON_TOPICS = LEXICON_TOPICS_LANG[lang];
+  const AUTHOR_GROUPS = AUTHOR_GROUPS_LANG[lang];
+
+  // Daily affirmation
+  const AFFIRMATIONS_DE = [
+    "Ich bin gesund, ganz und voller Lebensfreude. 🌸",
+    "Mein Körper heilt sich jeden Tag ein bisschen mehr. 💜",
+    "Ich vertraue dem Weisheit meines Körpers. 🌿",
+    "Ich bin es wert, geliebt und geheilt zu werden. ✨",
+    "Ich lasse los was mich nicht mehr dient. 🦋",
+    "Meine Seele kennt den Weg zur Heilung. 🌱",
+    "Ich bin im Einklang mit mir und der Welt. 🌍",
+    "Jeder Atemzug bringt mir Frieden und Heilung. 🧘",
+    "Ich bin stark, liebevoll und weise. 💛",
+    "Mein Herz ist offen für Heilung und Transformation. 🌸",
+    "Ich vertraue dem Prozess des Lebens. 🌊",
+    "Ich bin dankbar für meinen gesunden Körper. 🙏",
+    "Liebe fließt durch mich und heilt alles. 💜",
+    "Ich bin in perfekter Harmonie mit meinem wahren Selbst. ⭐",
+    "Mein Körper ist mein Tempel – ich ehre ihn. 🌺",
+  ];
+  const AFFIRMATIONS_IT = [
+    "Sono sana, intera e piena di gioia di vivere. 🌸",
+    "Il mio corpo guarisce ogni giorno un po' di più. 💜",
+    "Mi fido della saggezza del mio corpo. 🌿",
+    "Merito di essere amata e guarita. ✨",
+    "Lascio andare ciò che non mi serve più. 🦋",
+    "La mia anima conosce la via della guarigione. 🌱",
+    "Sono in armonia con me stessa e col mondo. 🌍",
+    "Ogni respiro mi porta pace e guarigione. 🧘",
+    "Sono forte, amorevole e saggia. 💛",
+    "Il mio cuore è aperto alla guarigione. 🌸",
+    "Mi fido del processo della vita. 🌊",
+    "Sono grata per il mio corpo sano. 🙏",
+    "L'amore scorre attraverso di me e guarisce tutto. 💜",
+    "Sono in perfetta armonia con il mio vero sé. ⭐",
+    "Il mio corpo è un tempio – lo onoro. 🌺",
+  ];
+  const todayAffirmation = () => {
+    const day = new Date().getDate();
+    const list = lang === "de" ? AFFIRMATIONS_DE : AFFIRMATIONS_IT;
+    return list[day % list.length];
+  };
+
+  // Splash screen
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Dark mode colors
+  const dm = darkMode;
+  const bgMain = dm ? "linear-gradient(135deg,#0a1a14,#0a1a2a 50%,#0a2030)" : "linear-gradient(135deg,#fdf6f0,#f9f0f7 50%,#f0f5fd)";
+  const cardBg = dm ? "rgba(10,30,20,0.92)" : "rgba(255,255,255,0.82)";
+  const textC = dm ? "#a0ffd8" : "#626160";
+  const soft = dm ? "#59B88D" : "#59B88D";
+  const bdr = dm ? "#0a3020" : "#b8e8d8";
+  const card = cardBg;
+  const grad = dm ? "linear-gradient(135deg,#59B88D,#43D3FF)" : "linear-gradient(135deg,#59B88D,#3F9FFF)";
+  const [openGroups, setOpenGroups] = useState({});
+  const [favAuthors, setFavAuthors] = useState([]);
+  const [favMethods, setFavMethods] = useState([]);
+
+  // Extras – all OFF by default
+  const [activeExtras, setActiveExtras] = useState([]);
+  const [pickedAuthor, setPickedAuthor] = useState("");
+
+  const [symptom, setSymptom] = useState("");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const [selectedLexicon, setSelectedLexicon] = useState(null);
+  const [lexiconResult, setLexiconResult] = useState(null);
+  const [lexiconLoading, setLexiconLoading] = useState(false);
+
+  const [chatMessages, setChatMessages] = useState([{
+    role:"assistant",
+    content:"Willkommen 🌸\n\nIch bin dein ganzheitlicher Heilbegleiter – mit 38+ Weisheitsquellen.\n\nGib dein Symptom ein und ich zeige dir die seelische Ursache und eine klare Zusammenfassung.\nMit den Zusatz-Buttons kannst du gezielt mehr erfahren – z.B. Kräuter, Öle, einen bestimmten Autor…\n\nWas beschäftigt dich heute?"
+  }]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [user, setUser] = useState(null);
+  const [langOpen, setLangOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [journalTab, setJournalTab] = useState("analyses");
+  const [analyses, setAnalyses] = useState([]);
+  const [diaryEntries, setDiaryEntries] = useState([]);
+  const [diaryTitle, setDiaryTitle] = useState("");
+  const [diaryContent, setDiaryContent] = useState("");
+  const [diaryLoading, setDiaryLoading] = useState(false);
+  const [saveNote, setSaveNote] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [moonData, setMoonData] = useState(null);
+  const [moonLoading, setMoonLoading] = useState(false);
+  const [moonAdvice, setMoonAdvice] = useState(null);
+  const [moonAdviceLoading, setMoonAdviceLoading] = useState(false);
+  const [selectedMoonTopic, setSelectedMoonTopic] = useState(null);
+  const chatEndRef = useRef(null);
+
+  const switchLang = (l) => {
+    setLang(l);
+    setChatMessages([{role:"assistant", content: T[l].chatWelcome}]);
+  };
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({behavior:"smooth"}); }, [chatMessages]);
+
+  useEffect(function() {
+    supabase.auth.getSession().then(function(res) {
+      if (res.data.session) setUser(res.data.session.user);
+    });
+    const sub = supabase.auth.onAuthStateChange(function(event, session) {
+      setUser(session ? session.user : null);
+    });
+    return function() { sub.data.subscription.unsubscribe(); };
+  }, []);
+
+  const toggleExtra = (id) =>
+    setActiveExtras(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
+
+  const toggleFavA = name => setFavAuthors(p => p.includes(name) ? p.filter(x=>x!==name) : [...p,name]);
+  const toggleFavM = id   => setFavMethods(p => p.includes(id)   ? p.filter(x=>x!==id)   : [...p,id]);
+  const toggleGroup = g   => setOpenGroups(p => ({...p,[g]:!p[g]}));
+
+  const toggleAuthor = (name) =>
+    setSelectedAuthors(prev => prev.includes(name) ? prev.filter(x=>x!==name) : [...prev,name]);
+
+  const callClaude = async (messages, maxTokens=2500) => {
+    const res = await fetch("/api/chat",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-5",max_tokens:maxTokens,system:SYSTEM_PROMPTS[lang],messages}),
+    });
+    const data = await res.json();
+    return data.content?.map(b=>b.text||"").join("")||t.noAnswer;
+  };
+
+  const buildPrompt = (topic) => {
+    const has = id => activeExtras.includes(id);
+    const isIT = lang === "it";
+    const favList = favAuthors.length > 0
+      ? isIT ? `\nPriorità ai preferiti: ${favAuthors.join(", ")}`
+             : `\nFavoriten besonders berücksichtigen: ${favAuthors.join(", ")}`
+      : "";
+    const extras = [
+      has("krauter")    ? isIT ? `\n🌿 **ERBE MEDICINALI & TINTURE**\n2-3 erbe – nome, effetto, ricetta (tè/tintura), dosaggio` : `\n🌿 **HEILKRÄUTER & TINKTUREN**\n2-3 Kräuter – Name, Wirkung, Rezept (Tee/Tinktur), Dosierung` : "",
+      has("oele")       ? isIT ? `\n🧴 **OLI ESSENZIALI**\n2 oli – effetto, uso, ricetta mix` : `\n🧴 **ÄTHERISCHE ÖLE**\n2 Öle – Wirkung, Anwendungsart, Mischrezept` : "",
+      has("creme")      ? isIT ? `\n🫙 **RICETTA CREMA / UNGUENTO**\nIngredienti con dosi, preparazione, applicazione` : `\n🫙 **CREME / SALBE SELBERMACHEN**\nZutaten mit Mengen, Zubereitung, Anwendung` : "",
+      has("heilsteine") ? isIT ? `\n💎 **PIETRE & CRISTALLI**\n2-3 pietre – effetto & uso` : `\n💎 **HEILSTEINE & KRISTALLE**\n2-3 Steine – Wirkung & Anwendung` : "",
+      has("meditation") ? isIT ? `\n🧘 **MEDITAZIONE & RESPIRO**\n4-5 passi, 5 minuti` : `\n🧘 **MEDITATIONS- & ATEMÜBUNG**\n4-5 Schritte, 5 Minuten` : "",
+      has("koerper")    ? isIT ? `\n🤸 **ESERCIZIO CORPOREO**\nEsercizio concreto con istruzioni` : `\n🤸 **KÖRPERÜBUNG**\nEine konkrete Übung mit Anleitung` : "",
+    ].filter(Boolean).join("");
+
+    return isIT
+      ? `Analizza olisticamente: "${topic}"${favList}
+
+🌱 **CAUSA DELL'ANIMA**
+(3-4 frasi empatiche – sfondo emotivo/spirituale)
+${extras}
+
+🌿 **RIMEDI NATURALI** (solo ciò che si adatta veramente – max 2-3 categorie, breve & concreto)
+
+---
+
+💬 **AFFERMAZIONE & AFFORMAZIONE**
+• Affermazione: (1 frase potente in prima persona, stile Louise Hay)
+• Afformazione: (1 domanda aperta "Perché...?", stile Noah St. John)
+
+---
+
+📋 **SOMMARIO**
+• 🌱 Messaggio centrale dell'anima: (1 frase)
+• 🌿 Rimedio naturale consigliato: (1 frase)
+• 💬 Il tuo primo passo oggi: (1 frase concreta)${favAuthors.length>0?`\n• ⭐ Per te (${favAuthors.slice(0,2).join(", ")}): (1 frase personale)`:""}
+
+⚕️ *Questi impulsi non sostituiscono una consulenza medica.*`
+      : `Analysiere ganzheitlich: "${topic}"${favList}
+
+🌱 **SEELISCHE URSACHE**
+(3-4 einfühlsame Sätze – emotionale/seelische Hintergründe)
+${extras}
+
+🌿 **NATURHILFEN** (nur was wirklich passt – max 2-3 Kategorien, kurz & konkret)
+
+---
+
+💬 **AFFIRMATION & AFFORMATION**
+• Affirmation: (1 kraftvoller Ich-Satz, Louise Hay Stil)
+• Afformation: (1 offene Warum-Frage, Noah St. John Stil)
+
+---
+
+📋 **ZUSAMMENFASSUNG**
+• 🌱 Seelische Kernbotschaft: (1 Satz)
+• 🌿 Empfohlene Naturhilfe: (1 Satz)
+• 💬 Dein erster Schritt heute: (1 konkreter Satz)${favAuthors.length>0?`\n• ⭐ Für dich (${favAuthors.slice(0,2).join(", ")}): (1 persönlicher Satz)`:""}
+
+⚕️ *Diese Impulse ersetzen keine ärztliche Behandlung.*`;
+  };
+
+  const analyzeSymptom = async () => {
+    if (!symptom.trim()) return;
+    setLoading(true); setResult(null);
+    try {
+      setResult(await callClaude([{role:"user",content:buildPrompt(symptom)}]));
+    } catch { setResult(t.error); }
+    setLoading(false);
+  };
+
+  const loadLexicon = async (topic) => {
+    setSelectedLexicon(topic); setLexiconLoading(true); setLexiconResult(null);
+    try {
+      setLexiconResult(await callClaude([{role:"user",content:buildPrompt(topic)}]));
+    } catch { setLexiconResult(t.error); }
+    setLexiconLoading(false);
+  };
+
+  const signInWithGoogle = async function() {
+    setAuthLoading(true);
+    setAuthError("");
+    const res = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin }
+    });
+    if (res.error) { setAuthError(res.error.message); setAuthLoading(false); }
+  };
+
+  const signIn = async function() {
+    setAuthLoading(true);
+    setAuthError("");
+    const res = authMode === "login"
+      ? await supabase.auth.signInWithPassword({email: authEmail, password: authPassword})
+      : await supabase.auth.signUp({email: authEmail, password: authPassword});
+    if (res.error) setAuthError(res.error.message);
+    setAuthLoading(false);
+  };
+
+  const signOut = async function() {
+    await supabase.auth.signOut();
+    setUser(null);
+    setAnalyses([]);
+    setDiaryEntries([]);
+  };
+
+  const loadAnalyses = async function() {
+    if (!user) return;
+    const res = await supabase.from("saved_analyses").select("*").order("created_at", {ascending: false});
+    if (res.data) setAnalyses(res.data);
+  };
+
+  const loadDiary = async function() {
+    if (!user) return;
+    const res = await supabase.from("diary_entries").select("*").order("created_at", {ascending: false});
+    if (res.data) setDiaryEntries(res.data);
+  };
+
+  const saveAnalysis = async function(topic, resultText) {
+    if (!user) return;
+    await supabase.from("saved_analyses").insert({user_id: user.id, topic: topic, result: resultText, note: saveNote});
+    setSaveSuccess(true);
+    setSaveNote("");
+    setTimeout(function() { setSaveSuccess(false); }, 3000);
+  };
+
+  const deleteAnalysis = async function(id) {
+    await supabase.from("saved_analyses").delete().eq("id", id);
+    loadAnalyses();
+  };
+
+  const saveDiary = async function() {
+    if (!user || !diaryContent.trim()) return;
+    setDiaryLoading(true);
+    await supabase.from("diary_entries").insert({user_id: user.id, title: diaryTitle, content: diaryContent});
+    setDiaryTitle("");
+    setDiaryContent("");
+    await loadDiary();
+    setDiaryLoading(false);
+  };
+
+  const deleteDiary = async function(id) {
+    await supabase.from("diary_entries").delete().eq("id", id);
+    loadDiary();
+  };
+
+  const fetchMoonData = async () => {
+    setMoonLoading(true);
+    try {
+      const moonRes = await fetch("/api/moon");
+      const realData = await moonRes.json();
+      if (realData.error) throw new Error(realData.error);
+      const descPrompt = lang === "it"
+        ? "Oggi: " + realData.phase + " in " + realData.sign + ", " + realData.quality + ". Scrivi UNA frase spirituale breve su come usare questa energia per la guarigione interiore."
+        : "Heute: " + realData.phase + " im " + realData.sign + ", " + realData.quality + ". Schreibe EINEN kurzen spirituellen Satz wie man diese Energie für innere Heilung nutzt.";
+      const spiritualRes = await fetch("/api/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          model: "claude-sonnet-4-5",
+          max_tokens: 200,
+          system: lang === "it" ? "Sei un astrologo spirituale. Rispondi in italiano." : "Du bist ein spiritueller Astrologe. Antworte auf Deutsch.",
+          messages: [{role: "user", content: descPrompt}]
+        })
+      });
+      const sd = await spiritualRes.json();
+      setMoonData({
+        phase: realData.phase,
+        sign: realData.sign,
+        signEmoji: realData.signEmoji,
+        quality: realData.quality,
+        direction: realData.direction,
+        recommendations: realData.recommendations,
+        description: sd.content?.map(function(b){return b.text||"";}).join("").trim() || "",
+        source: "mondinfo.de"
+      });
+    } catch(e) { console.error(e); }
+    setMoonLoading(false);
+  };
+
+  const getMoonAdvice = async function(topic) {
+    setSelectedMoonTopic(topic);
+    setMoonAdviceLoading(true);
+    setMoonAdvice(null);
+    try {
+      const ph = moonData ? moonData.phase : "Mond";
+      const sg = moonData ? moonData.sign : "";
+      const prompt = lang === "it"
+        ? "Fase lunare oggi: " + ph + " in " + sg + ". Tema: " + topic + ". Dai consigli olistici: 1 - Consiglio lunare, 2 - Connessione astrologica, 3 - Affermazione, 4 - Esercizio pratico."
+        : "Mondphase heute: " + ph + " im " + sg + ". Thema: " + topic + ". Gib ganzheitliche Empfehlungen: 1 - Mondempfehlung, 2 - Astrologische Verbindung, 3 - Affirmation, 4 - Praktische Uebung.";
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          model: "claude-sonnet-4-5",
+          max_tokens: 800,
+          system: lang === "it" ? "Esperto di astrologia e guarigione olistica. Rispondi in italiano con calore." : "Experte fuer Astrologie und ganzheitliche Heilung. Antworte auf Deutsch, warm.",
+          messages: [{role: "user", content: prompt}]
+        })
+      });
+      const data = await res.json();
+      setMoonAdvice(data.content?.map(function(b){return b.text||"";}).join("") || "");
+    } catch(e) { setMoonAdvice(lang === "it" ? "Errore. Riprova." : "Fehler. Bitte erneut versuchen."); }
+    setMoonAdviceLoading(false);
+  };
+
+  const sendChat = async () => {
+    if (!chatInput.trim()) return;
+    const msgs = [...chatMessages,{role:"user",content:chatInput}];
+    setChatMessages(msgs); setChatInput(""); setChatLoading(true);
+    try {
+      const text = await callClaude(msgs.map(m=>({role:m.role,content:m.content})),900);
+      setChatMessages(p=>[...p,{role:"assistant",content:text}]);
+    } catch { setChatMessages(p=>[...p,{role:"assistant",content:t.errorChat}]); }
+    setChatLoading(false);
+  };
+
+  const fmt = text => text.split("\n").map((line,i)=>{
+    const html = line.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\*(.*?)\*/g,"<em>$1</em>");
+    return <p key={i} dangerouslySetInnerHTML={{__html:html}}
+      style={{margin:"3px 0",lineHeight:1.78,fontSize:13.5,color:dm?"#a0e8c8":"#0a3020"}}/>;
+  });
+
+  const FavBar = () => {
+    const hasF = favAuthors.length>0 || favMethods.length>0;
+    if (!hasF) return (
+      <div style={{background:dm?"rgba(10,30,20,.6)":"rgba(255,255,255,.55)",borderRadius:11,padding:"8px 14px",marginBottom:10,
+        border:`1px dashed ${bdr}`,fontSize:11,color:soft,fontStyle:"italic",textAlign:"center"}}>
+        {t.favEmpty}
+      </div>
+    );
+    return (
+      <div style={{background:"rgba(255,255,255,.78)",borderRadius:12,padding:"10px 14px",marginBottom:11,
+        border:`1px solid rgba(196,155,196,.35)`}}>
+        <p style={{margin:"0 0 7px",fontSize:11,fontWeight:"bold",color:textC}}>{t.favTitle}</p>
+        <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+          {favAuthors.map(name=>{
+            // Try current lang first, then DE as fallback
+            const allA = AUTHOR_GROUPS_LANG[lang].flatMap(g=>g.authors);
+            const a = allA.find(x=>x.name===name) || allA.find(x=>x.name.includes(name.split("(")[0].trim()));
+            const displayName = name.split("(")[0].trim();
+            return (
+              <span key={name} style={{
+                padding:"3px 10px",borderRadius:12,background:"linear-gradient(135deg,#e8f8f0,#e0f4ff)",
+                border:`1px solid #c49bc4`,color:textC,fontSize:10.5,
+                display:"flex",alignItems:"center",gap:4,
+              }}>
+                {a?.emoji||"🌸"} {displayName}
+                <button onClick={()=>toggleFavA(name)} style={{background:"none",border:"none",cursor:"pointer",
+                  fontSize:11,color:soft,padding:0,lineHeight:1}}>✕</button>
+              </span>
+            );
+          })}
+          {favMethods.map(id=>{
+            const m = EXTRAS.find(x=>x.id===id);
+            if (!m) return null;
+            return (
+              <span key={id} style={{
+                padding:"3px 10px",borderRadius:12,background:"linear-gradient(135deg,#e0f4ff,#e8f8f0)",
+                border:`1px solid #9bb4c4`,color:"#3F9FFF",fontSize:10.5,
+                display:"flex",alignItems:"center",gap:4,
+              }}>
+                {m.emoji} {m.label}
+                <button onClick={()=>toggleFavM(id)} style={{background:"none",border:"none",cursor:"pointer",
+                  fontSize:11,color:soft,padding:0,lineHeight:1}}>✕</button>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const ExtrasSelector = () => (
+    <div style={{marginBottom:14}}>
+      <div onClick={()=>setExtrasOpen(!extrasOpen)} style={{
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        padding:"8px 12px",background:"rgba(255,255,255,.7)",borderRadius:10,
+        border:`1px solid ${bdr}`,cursor:"pointer",marginBottom:extrasOpen?6:0,
+      }}>
+        <span style={{fontSize:11.5,color:textC,fontWeight:"bold"}}>
+          {t.extrasTitle}
+          {activeExtras.length>0 && <span style={{marginLeft:8,background:"#59B88D",color:"white",
+            borderRadius:10,padding:"1px 7px",fontSize:10}}>{activeExtras.length} {t.aktiv}</span>}
+        </span>
+        <span style={{fontSize:12,color:soft,transform:extrasOpen?"rotate(180deg)":"none",transition:"transform .2s"}}>▾</span>
+      </div>
+      {extrasOpen && (
+        <div style={{background:"rgba(255,255,255,.7)",borderRadius:10,padding:"10px 12px",
+          border:`1px solid ${bdr}`,borderTop:"none",borderTopLeftRadius:0,borderTopRightRadius:0,
+          animation:"slideDown .2s ease"}}>
+          <p style={{margin:"0 0 8px",fontSize:10.5,color:soft,fontStyle:"italic"}}>{t.extrasHint}</p>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {EXTRAS.map(ex=>{
+              const active = activeExtras.includes(ex.id);
+              const isFav = favMethods.includes(ex.id);
+              return (
+                <div key={ex.id} style={{display:"flex",alignItems:"center",gap:1}}>
+                  <button onClick={()=>toggleExtra(ex.id)} style={{
+                    padding:"5px 11px",borderRadius:16,border:"1.5px solid",
+                    borderColor:active?"#3F9FFF":bdr,
+                    background:active?"linear-gradient(135deg,#e0f4ff,#e8f8f0)":"white",
+                    color:active?"#3F9FFF":soft,fontSize:10.5,fontFamily:"inherit",cursor:"pointer",
+                    fontWeight:active?"bold":"normal",transition:"all .18s",
+                  }}>{ex.emoji} {ex.label}</button>
+                  <button onClick={()=>toggleFavM(ex.id)} title={isFav?"Favorit entfernen":"Als Favorit"} style={{
+                    background:"none",border:"none",cursor:"pointer",fontSize:12,
+                    opacity:isFav?1:.45,padding:"0 2px",transition:"all .15s",
+                  }}>{isFav?"⭐":"☆"}</button>
+                </div>
+              );
+            })}
+          </div>
+          {activeExtras.includes("autoren") && (
+            <div style={{marginTop:10,padding:"10px 12px",background:"rgba(196,155,196,.08)",borderRadius:9}}>
+              <p style={{margin:"0 0 7px",fontSize:11,color:textC,fontWeight:"bold"}}>{t.authorPickerTitle}</p>
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {AUTHOR_GROUPS.flatMap(g=>g.authors).map(a=>(
+                    <button key={a.name} onClick={()=>setPickedAuthor(a.name)} style={{
+                      padding:"4px 9px",borderRadius:13,border:"1.5px solid",
+                      borderColor:pickedAuthor===a.name?"#59B88D":bdr,
+                      background:pickedAuthor===a.name?"linear-gradient(135deg,#e8f8f0,#e0f4ff)":"white",
+                      color:pickedAuthor===a.name?textC:soft,
+                      fontSize:10,fontFamily:"inherit",cursor:"pointer",transition:"all .18s",
+                    }}>{a.emoji} {a.name.split("(")[0].trim()}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Einziges kombiniertes Panel ──
+  const SourcePanel = () => {
+    const [open, setOpen] = useState(false);
+    const activeCount = activeExtras.length + favAuthors.length;
+    return (
+      <div style={{marginBottom:14}}>
+        <div onClick={()=>setOpen(!open)} style={{
+          display:"flex",justifyContent:"space-between",alignItems:"center",
+          padding:"8px 12px",background:"rgba(255,255,255,.7)",borderRadius:10,
+          border:`1px solid ${bdr}`,cursor:"pointer",marginBottom:open?0:0,
+        }}>
+          <span style={{fontSize:11.5,color:textC,fontWeight:"bold"}}>
+            {t.panelTitle}
+            {activeCount>0 && <span style={{marginLeft:8,background:"#59B88D",color:"white",
+              borderRadius:10,padding:"1px 7px",fontSize:10}}>{activeCount} {t.aktiv}</span>}
+          </span>
+          <span style={{fontSize:12,color:soft,transform:open?"rotate(180deg)":"none",transition:"transform .2s"}}>▾</span>
+        </div>
+
+        {open && (
+          <div style={{background:"rgba(255,255,255,.72)",borderRadius:"0 0 10px 10px",padding:"12px 12px",
+            border:`1px solid ${bdr}`,borderTop:"none",animation:"slideDown .2s ease"}}>
+            <p style={{margin:"0 0 10px",fontSize:10.5,color:soft,fontStyle:"italic"}}>{t.panelHint}</p>
+
+            {/* Autoren-Gruppen */}
+            {AUTHOR_GROUPS.map(grp=>(
+              <div key={grp.group} style={{marginBottom:10}}>
+                <p style={{color:"#59B88D",fontSize:10.5,margin:"0 0 5px",fontWeight:"bold"}}>{grp.group}</p>
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                  {grp.authors.map(a=>{
+                    const isFav = favAuthors.includes(a.name);
+                    return (
+                      <div key={a.name} style={{display:"flex",alignItems:"center",gap:1}}>
+                        <span style={{
+                          padding:"4px 9px",borderRadius:13,border:`1px solid ${bdr}`,
+                          background:isFav?"linear-gradient(135deg,#e8f8f0,#e0f4ff)":"white",
+                          color:isFav?textC:soft,fontSize:10.5,
+                        }}>{a.emoji} {a.name.split("(")[0].trim()}</span>
+                        <button onClick={()=>toggleFavA(a.name)} title={isFav?"Favorit entfernen":"Als Favorit"} style={{
+                          background:"none",border:"none",cursor:"pointer",fontSize:12,
+                          opacity:isFav?1:.45,padding:"0 2px",transition:"all .15s",
+                        }}>{isFav?"⭐":"☆"}</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {/* Trennlinie */}
+            <div style={{height:1,background:"linear-gradient(90deg,transparent,#d4b4d4,transparent)",margin:"10px 0"}}/>
+
+            {/* Zusatzinfos */}
+            <p style={{color:"#59B88D",fontSize:10.5,margin:"0 0 6px",fontWeight:"bold"}}>
+              {lang==="de"?"➕ Zusatzinfos":"➕ Informazioni aggiuntive"}
+            </p>
+            <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+              {EXTRAS.map(ex=>{
+                const active = activeExtras.includes(ex.id);
+                const isFav = favMethods.includes(ex.id);
+                return (
+                  <div key={ex.id} style={{display:"flex",alignItems:"center",gap:1}}>
+                    <button onClick={()=>toggleExtra(ex.id)} style={{
+                      padding:"5px 10px",borderRadius:16,border:"1.5px solid",
+                      borderColor:active?"#3F9FFF":bdr,
+                      background:active?"linear-gradient(135deg,#e0f4ff,#e8f8f0)":"white",
+                      color:active?"#3F9FFF":soft,fontSize:10.5,fontFamily:"inherit",cursor:"pointer",
+                      fontWeight:active?"bold":"normal",
+                    }}>{ex.emoji} {ex.label}</button>
+                    <button onClick={()=>toggleFavM(ex.id)} style={{
+                      background:"none",border:"none",cursor:"pointer",fontSize:12,
+                      opacity:isFav?1:.45,padding:"0 2px",transition:"all .15s",
+                    }}>{isFav?"⭐":"☆"}</button>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:bgMain,fontFamily:"Georgia,serif",transition:"background .4s"}}>
+      <style>{`
+        @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes splashFade{0%{opacity:1}80%{opacity:1}100%{opacity:0;pointer-events:none}}
+        @keyframes splashFloat{0%{transform:scale(0.5) rotate(-10deg);opacity:0}60%{transform:scale(1.1) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
+        @keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+        button{transition:all .18s}button:hover{filter:brightness(.96)}
+        .litem:hover{background:rgba(180,120,180,.13)!important;transform:translateX(3px);cursor:pointer}
+        textarea:focus,input:focus{outline:none;box-shadow:0 0 0 2px rgba(89,184,141,.3)}
+        ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:rgba(89,184,141,.3);border-radius:3px}
+        .sugg:hover{background:${dm?"#0a2018":"#f5eef5"}!important;cursor:pointer}
+        a:hover{opacity:.82}
+      `}</style>
+
+      {/* SPLASH SCREEN */}
+      {showSplash && (
+        <div style={{
+          position:"fixed",inset:0,zIndex:9999,
+          background:"linear-gradient(135deg,#e8f8f4,#d0f0e8,#d0ebff)",
+          display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+          animation:"splashFade 2.8s ease forwards",
+        }}>
+          <div style={{animation:"splashFloat .8s ease forwards",marginBottom:20}}>
+            <img src="/icon-192.png" style={{height:"120px",width:"auto"}}/>
+          </div>
+          <div style={{
+            fontSize:26,fontWeight:"normal",color:"#626160",letterSpacing:3,
+            background:"linear-gradient(90deg,#59B88D,#43D3FF,#3F9FFF,#59B88D)",
+            backgroundSize:"200% auto",
+            WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+            animation:"shimmer 2s linear infinite",
+          }}>Seele · Körper · Heilung</div>
+          <p style={{color:"#59B88D",fontSize:13,marginTop:10,letterSpacing:1}}>Tamara Jost</p>
+          <div style={{marginTop:30,display:"flex",gap:8}}>
+            {[0,1,2].map(i=>(
+              <div key={i} style={{
+                width:8,height:8,borderRadius:"50%",background:"#59B88D",
+                animation:`float ${1+i*0.3}s ease-in-out infinite`,
+                animationDelay:`${i*0.2}s`,
+              }}/>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{maxWidth:740,margin:"0 auto",padding:"20px 14px 44px"}}>
+
+        {/* Header */}
+        <div style={{textAlign:"center",marginBottom:18,animation:"fadeIn .7s ease"}}>
+          {/* Top bar: Dark mode + Language */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            {/* Dark mode toggle */}
+            <button onClick={()=>setDarkMode(!dm)} style={{
+              padding:"5px 12px",borderRadius:20,border:`1px solid ${bdr}`,
+              background:dm?"#0a2018":"white",color:dm?"#a0ffd8":soft,
+              fontSize:13,cursor:"pointer",fontFamily:"inherit",
+            }}>{dm?"☀️ Hell":"🌙 Dunkel"}</button>
+
+            {/* Top right: Language + User */}
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              
+              {/* Language Dropdown */}
+              <div style={{position:"relative"}}>
+                <button onClick={function(){setLangOpen(!langOpen);}} style={{
+                  padding:"6px 12px",borderRadius:20,
+                  border:"1.5px solid rgba(89,184,141,.4)",
+                  background:"white",color:"#626160",fontSize:12,cursor:"pointer",
+                  fontFamily:"inherit",display:"flex",alignItems:"center",gap:5,
+                }}>
+                  {lang==="de" ? "🇩🇪 DE" : "🇮🇹 IT"} ▾
+                </button>
+                {langOpen && (
+                  <div style={{
+                    position:"absolute",top:"110%",right:0,
+                    background:"white",borderRadius:12,
+                    boxShadow:"0 4px 20px rgba(0,0,0,.12)",
+                    border:"1px solid #b8e8d8",
+                    zIndex:999,overflow:"hidden",minWidth:120
+                  }}>
+                    <button onClick={function(){switchLang("de");setLangOpen(false);}} style={{
+                      display:"block",width:"100%",padding:"10px 14px",border:"none",
+                      background:lang==="de" ? "rgba(89,184,141,.1)" : "white",
+                      color:"#626160",fontSize:12,cursor:"pointer",
+                      fontFamily:"inherit",textAlign:"left",
+                      fontWeight:lang==="de" ? "bold" : "normal",
+                    }}>🇩🇪 Deutsch</button>
+                    <button onClick={function(){switchLang("it");setLangOpen(false);}} style={{
+                      display:"block",width:"100%",padding:"10px 14px",border:"none",
+                      background:lang==="it" ? "rgba(89,184,141,.1)" : "white",
+                      color:"#626160",fontSize:12,cursor:"pointer",
+                      fontFamily:"inherit",textAlign:"left",
+                      fontWeight:lang==="it" ? "bold" : "normal",
+                    }}>🇮🇹 Italiano</button>
+                  </div>
+                )}
+              </div>
+
+              {/* User Icon */}
+              <button onClick={function(){setActiveTab("journal");}} style={{
+                width:36,height:36,borderRadius:"50%",
+                border:"1.5px solid #b8e8d8",
+                background:user ? "linear-gradient(135deg,#59B88D,#3F9FFF)" : "white",
+                color:user ? "white" : "#9b7a9b",
+                fontSize:user ? 14 : 16,cursor:"pointer",
+                display:"flex",alignItems:"center",justifyContent:"center",
+              }}>
+                {user ? "✓" : "👤"}
+              </button>
+            </div>
+          </div>
+
+          
+{/* Logo / Title */}
+          <div style={{animation:"float 4s ease-in-out infinite",marginBottom:8}}>
+            <img src="/icon-192.png"
+              alt="Tamara Jost"
+              style={{height:"90px",width:"auto",transition:"filter .4s"}}
+            />
+          </div>
+          <h1 style={{fontSize:20,fontWeight:"normal",color:textC,letterSpacing:2.5,margin:"5px 0 2px"}}>{t.titleReal}</h1>
+          <p style={{color:soft,fontSize:10.5,margin:0,letterSpacing:.7}}>{t.subtitleReal}</p>
+          <div style={{width:50,height:1,background:"linear-gradient(90deg,transparent,#59B88D,transparent)",margin:"7px auto 0"}}/>
+          <div style={{marginTop:7,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <span style={{fontSize:10.5,color:soft}}>{t.projectOf}</span>
+            <a href="https://www.tamarajost.com" target="_blank" rel="noopener noreferrer"
+              style={{fontSize:11.5,color:textC,fontWeight:"bold",textDecoration:"none",borderBottom:"1px dotted #59B88D"}}>
+              Tamara Jost
+            </a>
+          </div>
+
+          {/* Daily Affirmation */}
+          <div style={{
+            marginTop:14,padding:"12px 18px",
+            background:dm?"rgba(20,60,40,0.4)":"linear-gradient(135deg,rgba(89,184,141,.1),rgba(67,211,255,.1))",
+            borderRadius:14,border:`1px solid ${dm?"#0a3020":"rgba(89,184,141,.3)"}`,
+            animation:"fadeIn 1s ease .5s both",
+          }}>
+            <p style={{fontSize:10,color:soft,margin:"0 0 4px",letterSpacing:1}}>
+              {lang==="de"?"✨ TAGES-AFFIRMATION":"✨ AFFERMAZIONE DEL GIORNO"}
+            </p>
+            <p style={{fontSize:13.5,color:textC,margin:0,fontStyle:"italic",lineHeight:1.6}}>
+              {todayAffirmation()}
+            </p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div style={{display:"flex",gap:5,marginBottom:14,background:"rgba(255,255,255,.5)",borderRadius:13,padding:5,overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none"}}>
+          {[{id:"search",label:t.tab1},{id:"lexicon",label:t.tab2},{id:"chat",label:t.tab3}].map(tab=>(
+            <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{
+              flex:1,padding:"9px 5px",border:"none",borderRadius:9,cursor:"pointer",
+              background:activeTab===tab.id?grad:"transparent",
+              color:activeTab===tab.id?"white":soft,
+              fontSize:11.5,fontFamily:"inherit",fontWeight:activeTab===tab.id?"bold":"normal",
+              flexShrink:0,whiteSpace:"nowrap",
+            }}>{tab.label}</button>
+          ))}
+        </div>
+
+        {/* Secondary navigation: Moon + Mein Bereich */}
+        <div style={{display:"flex",gap:8,marginBottom:14,justifyContent:"center"}}>
+          {[{id:"moon",label:t.tab4,icon:"🌙"},{id:"journal",label:t.tab5,icon:user?"✅":"🔐"}].map(tab=>(
+            <button key={tab.id} onClick={()=>setActiveTab(tab.id)} style={{
+              padding:"7px 18px",border:"1.5px solid",
+              borderColor:activeTab===tab.id?"#59B88D":bdr,
+              borderRadius:20,cursor:"pointer",
+              background:activeTab===tab.id?"linear-gradient(135deg,#59B88D,#3F9FFF)":"rgba(255,255,255,.7)",
+              color:activeTab===tab.id?"white":soft,
+              fontSize:11.5,fontFamily:"inherit",
+              fontWeight:activeTab===tab.id?"bold":"normal",
+            }}>{tab.icon} {tab.label}</button>
+          ))}
+        </div>
+
+        {/* ═══ SEARCH ═══ */}
+        {activeTab==="search" && (
+          <div style={{animation:"fadeIn .4s ease"}}>
+            <FavBar/>
+
+            <div style={{background:card,borderRadius:17,padding:18,marginBottom:13,boxShadow:"0 3px 18px rgba(160,100,160,.09)"}}>
+              <p style={{color:soft,fontSize:11.5,margin:"0 0 12px",fontStyle:"italic",textAlign:"center"}}>
+                {t.defaultHint} <strong style={{color:textC}}>{t.defaultHint2}</strong> {t.defaultHint3} <strong style={{color:textC}}>{t.defaultHint4}</strong>.<br/>
+                {t.defaultHint5}
+              </p>
+
+              <SourcePanel/>
+
+              <textarea value={symptom} onChange={e=>setSymptom(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),analyzeSymptom())}
+                placeholder={t.placeholder}
+                style={{width:"100%",minHeight:78,padding:"11px 14px",border:`1.5px solid ${bdr}`,borderRadius:12,
+                  background:"rgba(255,255,255,.88)",color:"#3a1a3a",fontSize:13.5,fontFamily:"inherit",
+                  resize:"vertical",lineHeight:1.65,boxSizing:"border-box"}}/>
+
+              <button onClick={analyzeSymptom} disabled={loading||!symptom.trim()} style={{
+                width:"100%",marginTop:10,padding:"12px",background:loading?"#c4a4c4":grad,
+                border:"none",borderRadius:12,color:"white",fontSize:14,cursor:loading?"default":"pointer",
+                fontFamily:"inherit",boxShadow:"0 4px 15px rgba(160,100,160,.2)",
+              }}>
+                {loading?t.btnLoading:t.btnAnalyze}
+              </button>
+            </div>
+
+            {result && (
+              <div style={{background:card,borderRadius:17,padding:22,
+                boxShadow:"0 3px 18px rgba(160,100,160,.09)",animation:"fadeIn .5s ease",
+                borderLeft:"3px solid #59B88D"}}>
+                {fmt(result)}
+                {user && (
+                  <div style={{marginTop:16,paddingTop:14,borderTop:"1px solid rgba(89,184,141,.2)"}}>
+                    <p style={{color:"#59B88D",fontSize:11.5,margin:"0 0 8px",fontWeight:"bold"}}>
+                      {lang==="it" ? "📝 Nota personale:" : "📝 Persönliche Notiz:"}
+                    </p>
+                    <textarea value={saveNote} onChange={function(e){setSaveNote(e.target.value);}}
+                      placeholder={lang==="it" ? "La tua riflessione..." : "Deine Gedanken..."}
+                      rows={2} style={{width:"100%",padding:"9px 12px",border:"1.5px solid #b8e8d8",borderRadius:10,background:"white",color:"#626160",fontSize:12.5,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",marginBottom:8}}/>
+                    <button onClick={function(){saveAnalysis(symptom, result);}} style={{width:"100%",padding:"10px",background:saveSuccess?"#4CAF50":"linear-gradient(135deg,#59B88D,#3F9FFF)",border:"none",borderRadius:11,color:"white",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>
+                      {saveSuccess ? "✅ "+ (lang==="it"?"Salvato!":"Gespeichert!") : "💾 "+ (lang==="it"?"Salva":"In Mein Bereich speichern")}
+                    </button>
+                  </div>
+                )}
+                <TamaraBox lang={lang}/>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ LEXICON ═══ */}
+        {activeTab==="lexicon" && (
+          <div style={{animation:"fadeIn .4s ease"}}>
+            <FavBar/>
+            <div style={{background:card,borderRadius:17,padding:17,marginBottom:13,boxShadow:"0 3px 18px rgba(160,100,160,.09)"}}>
+              <p style={{color:soft,fontSize:11.5,margin:"0 0 10px",fontStyle:"italic"}}>
+                {t.lexiconHint}<br/>{t.lexiconHint2}
+              </p>
+              <SourcePanel/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginTop:10}}>
+                {LEXICON_TOPICS.map(topic=>(
+                  <button key={topic} className="litem" onClick={()=>loadLexicon(topic)} style={{
+                    padding:"9px 12px",border:`1.5px solid`,
+                    borderColor:selectedLexicon===topic?"#59B88D":bdr,
+                    borderRadius:10,background:selectedLexicon===topic?"rgba(180,120,180,.1)":"white",
+                    color:"#5a3a5a",fontSize:12.5,textAlign:"left",fontFamily:"inherit",
+                  }}>{topic}</button>
+                ))}
+              </div>
+            </div>
+            {lexiconLoading && (
+              <div style={{textAlign:"center",padding:32,color:soft}}>
+                <div style={{fontSize:28,animation:"spin 2s linear infinite",display:"inline-block"}}>🌸</div>
+                <p style={{marginTop:9,fontSize:12.5}}>{t.lexiconLoading}</p>
+              </div>
+            )}
+            {lexiconResult && !lexiconLoading && (
+              <div style={{background:card,borderRadius:17,padding:22,
+                boxShadow:"0 3px 18px rgba(160,100,160,.09)",animation:"fadeIn .5s ease",
+                borderLeft:"3px solid #3F9FFF"}}>
+                {fmt(lexiconResult)}
+                <TamaraBox lang={lang}/>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ CHAT ═══ */}
+        {activeTab==="chat" && (
+          <div style={{animation:"fadeIn .4s ease"}}>
+            <div style={{background:card,borderRadius:17,boxShadow:"0 3px 18px rgba(160,100,160,.09)",overflow:"hidden"}}>
+              <div style={{height:390,overflowY:"auto",padding:17}}>
+                {chatMessages.map((msg,i)=>(
+                  <div key={i} style={{display:"flex",justifyContent:msg.role==="user"?"flex-end":"flex-start",
+                    marginBottom:11,animation:"fadeIn .3s ease"}}>
+                    {msg.role==="assistant"&&<div style={{fontSize:17,marginRight:6,marginTop:4,flexShrink:0}}><img src="/icon-192.png" style={{height:"22px",width:"22px",objectFit:"contain"}}/></div>}
+                    <div style={{
+                      maxWidth:"82%",padding:"10px 14px",
+                      borderRadius:msg.role==="user"?"16px 16px 4px 16px":"16px 16px 16px 4px",
+                      background:msg.role==="user"?grad:"white",
+                      color:msg.role==="user"?"white":"#0a3020",
+                      fontSize:13,lineHeight:1.72,boxShadow:"0 2px 7px rgba(0,0,0,.05)",whiteSpace:"pre-wrap",
+                    }}>{msg.content}</div>
+                  </div>
+                ))}
+                {chatLoading&&(
+                  <div style={{display:"flex",alignItems:"center",gap:7,color:soft,fontSize:12}}>
+                    <img src="/icon-192.png" style={{height:"22px",width:"22px",objectFit:"contain",animation:"float 1.2s infinite"}}/>
+                    <span>{t.lexiconLoading}</span>
+                  </div>
+                )}
+                <div ref={chatEndRef}/>
+              </div>
+              <div style={{padding:"10px 13px",borderTop:`1px solid rgba(200,160,200,.17)`,display:"flex",gap:8,alignItems:"flex-end"}}>
+                <textarea value={chatInput} onChange={e=>setChatInput(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&(e.preventDefault(),sendChat())}
+                  placeholder={t.chatPlaceholder}
+                  rows={2} style={{
+                    flex:1,padding:"10px 13px",border:`1.5px solid ${bdr}`,
+                    borderRadius:11,background:"rgba(255,255,255,.9)",
+                    color:"#0a3020",fontSize:13,fontFamily:"inherit",resize:"none",
+                  }}/>
+                <button onClick={sendChat} disabled={chatLoading||!chatInput.trim()} style={{
+                  padding:"12px 15px",background:grad,border:"none",borderRadius:11,
+                  color:"white",cursor:"pointer",fontSize:16,flexShrink:0,
+                }}>🕊️</button>
+              </div>
+            </div>
+            <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:5}}>
+              {t.chatSuggestions.map(s=>(
+                <button key={s} className="sugg" onClick={()=>setChatInput(s)} style={{
+                  padding:"5px 12px",borderRadius:18,border:`1px solid ${bdr}`,
+                  background:"#f8fffd",color:soft,fontSize:10.5,fontFamily:"inherit",
+                }}>{s}</button>
+              ))}
+            </div>
+            <TamaraBox lang={lang}/>
+          </div>
+        )}
+
+        
+        {activeTab==="moon" && (
+          <div style={{animation:"fadeIn .4s ease"}}>
+            <div style={{background:"rgba(255,255,255,.82)",borderRadius:17,padding:20,marginBottom:13,boxShadow:"0 3px 18px rgba(89,184,141,.12)",textAlign:"center"}}>
+              <div style={{fontSize:40,marginBottom:8}}>🌙</div>
+              <h2 style={{color:"#626160",fontSize:18,fontWeight:"normal",margin:"0 0 6px"}}>
+                {lang==="it" ? "Calendario Lunare" : "Mondkalender"}
+              </h2>
+              <p style={{color:"#59B88D",fontSize:11.5,margin:"0 0 16px"}}>
+                {lang==="it" ? "Scopri l'energia di oggi" : "Entdecke die heutige Mondenergie"}
+              </p>
+              {!moonData && !moonLoading && (
+                <button onClick={fetchMoonData} style={{padding:"11px 28px",background:"linear-gradient(135deg,#59B88D,#3F9FFF)",border:"none",borderRadius:25,color:"white",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>
+                  {lang==="it" ? "🌙 Carica calendario" : "🌙 Mondkalender laden"}
+                </button>
+              )}
+              {moonLoading && <p style={{color:"#59B88D"}}>🌙 {lang==="it" ? "Caricamento..." : "Wird geladen..."}</p>}
+              {moonData && (
+                <div style={{animation:"fadeIn .5s ease"}}>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+                    {[
+                      {icon:"🌙",label:lang==="it"?"Fase":"Phase",val:moonData.phase},
+                      {icon:"⭐",label:lang==="it"?"Segno":"Zeichen",val:moonData.signEmoji+" "+moonData.sign},
+                      {icon:"🌿",label:lang==="it"?"Qualità":"Qualität",val:moonData.quality},
+                      {icon:"🧭",label:lang==="it"?"Direzione":"Richtung",val:moonData.direction},
+                    ].map(function(item,i){return (
+                      <div key={i} style={{background:"linear-gradient(135deg,rgba(89,184,141,.1),rgba(63,159,255,.1))",borderRadius:12,padding:"12px 10px",border:"1px solid rgba(89,184,141,.3)"}}>
+                        <div style={{fontSize:22,marginBottom:4}}>{item.icon}</div>
+                        <div style={{fontSize:10,color:"#59B88D",marginBottom:2}}>{item.label}</div>
+                        <div style={{fontSize:12,color:"#626160",fontWeight:"bold"}}>{item.val}</div>
+                      </div>
+                    );})}</div>
+                  {moonData.description && (
+                    <div style={{background:"rgba(89,184,141,.08)",borderRadius:12,padding:"14px 16px",marginBottom:16,borderLeft:"3px solid #59B88D",textAlign:"left"}}>
+                      <p style={{color:"#626160",fontSize:13,lineHeight:1.7,margin:0,fontStyle:"italic"}}>✨ {moonData.description}</p>
+                    </div>
+                  )}
+                  <p style={{color:"#626160",fontSize:12,marginBottom:10,fontWeight:"bold"}}>
+                    {lang==="it" ? "Scegli un tema:" : "Wähle ein Thema:"}
+                  </p>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center"}}>
+                    {(lang==="it"
+                      ? ["🏥 Salute","💆 Mente","🌿 Alimentazione","💪 Energia","❤️ Relazioni","🌱 Crescita","😴 Sonno","🧘 Meditazione"]
+                      : ["🏥 Gesundheit","💆 Geist & Seele","🌿 Ernaehrung","💪 Energie","❤️ Beziehungen","🌱 Persoenlichkeit","😴 Schlaf","🧘 Meditation"]
+                    ).map(function(topic){return (
+                      <button key={topic} onClick={function(){getMoonAdvice(topic);}} style={{padding:"7px 13px",borderRadius:20,border:"1.5px solid",borderColor:selectedMoonTopic===topic?"#59B88D":"#b8e8d8",background:selectedMoonTopic===topic?"linear-gradient(135deg,#59B88D,#3F9FFF)":"white",color:selectedMoonTopic===topic?"white":"#626160",fontSize:11.5,cursor:"pointer",fontFamily:"inherit"}}>
+                        {topic}
+                      </button>
+                    );})}
+                  </div>
+                </div>
+              )}
+            </div>
+            {moonAdviceLoading && <div style={{textAlign:"center",padding:24,color:"#59B88D"}}><div style={{fontSize:28,animation:"spin 2s linear infinite",display:"inline-block"}}>🌙</div><p>{lang==="it"?"Connessione...":"Verbinde..."}</p></div>}
+            {moonAdvice && !moonAdviceLoading && (
+              <div style={{background:"rgba(255,255,255,.82)",borderRadius:17,padding:22,boxShadow:"0 3px 18px rgba(89,184,141,.12)",animation:"fadeIn .5s ease",borderLeft:"3px solid #59B88D"}}>
+                {moonAdvice.split("\n").map(function(line,i){
+                  const ml = line.replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/\*(.*?)\*/g,"<em>$1</em>");
+                  return React.createElement("p",{key:i,dangerouslySetInnerHTML:{__html:ml},style:{margin:"3px 0",lineHeight:1.78,fontSize:13.5,color:"#4a5a4a"}});
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        
+
+
+        {activeTab==="journal" && (
+          <div style={{animation:"fadeIn .4s ease"}}>
+
+            {/* NOT LOGGED IN */}
+            {!user && (
+              <div style={{background:"rgba(255,255,255,.82)",borderRadius:17,padding:24,boxShadow:"0 3px 18px rgba(89,184,141,.12)",textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:10}}>🔐</div>
+                <h2 style={{color:"#626160",fontSize:17,fontWeight:"normal",margin:"0 0 8px"}}>
+                  {lang==="it" ? "Accedi al tuo spazio" : "Melde dich an"}
+                </h2>
+                <p style={{color:"#59B88D",fontSize:12,margin:"0 0 20px"}}>
+                  {lang==="it" ? "Salva le tue analisi e il tuo diario" : "Speichere deine Analysen und dein Tagebuch"}
+                </p>
+                {/* Google Login Button */}
+                <button onClick={signInWithGoogle} disabled={authLoading} style={{
+                  width:"100%",padding:"13px",
+                  background:"white",border:"1.5px solid #e0e0e0",
+                  borderRadius:11,color:"#626160",fontSize:14,
+                  cursor:"pointer",fontFamily:"inherit",
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                  boxShadow:"0 2px 8px rgba(0,0,0,.08)",marginBottom:12
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  {authLoading ? "⏳ ..." : (lang==="it"?"Accedi con Google":"Mit Google anmelden")}
+                </button>
+
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                  <div style={{flex:1,height:1,background:"#e0e0e0"}}/>
+                  <span style={{color:"#aaa",fontSize:11}}>{lang==="it"?"oppure":"oder"}</span>
+                  <div style={{flex:1,height:1,background:"#e0e0e0"}}/>
+                </div>
+
+                <div style={{display:"flex",gap:8,marginBottom:12,background:"rgba(89,184,141,.1)",borderRadius:12,padding:4}}>
+                  {["login","signup"].map(function(m){return (
+                    <button key={m} onClick={function(){setAuthMode(m); setAuthError("");}} style={{flex:1,padding:"8px",border:"none",borderRadius:9,cursor:"pointer",background:authMode===m?"linear-gradient(135deg,#59B88D,#3F9FFF)":"transparent",color:authMode===m?"white":"#626160",fontSize:12,fontFamily:"inherit"}}>
+                      {m==="login" ? (lang==="it"?"🔑 Email":"🔑 Email") : (lang==="it"?"✨ Registrati":"✨ Registrieren")}
+                    </button>
+                  );})}
+                </div>
+                <input type="email" value={authEmail} onChange={function(e){setAuthEmail(e.target.value);}}
+                  placeholder="Email" style={{width:"100%",padding:"11px 14px",border:"1.5px solid #b8e8d8",borderRadius:11,marginBottom:10,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",background:"white",color:"#626160"}}/>
+                <input type="password" value={authPassword} onChange={function(e){setAuthPassword(e.target.value);}}
+                  placeholder={lang==="it"?"Password":"Passwort"} style={{width:"100%",padding:"11px 14px",border:"1.5px solid #b8e8d8",borderRadius:11,marginBottom:12,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",background:"white",color:"#626160"}}/>
+                {authError && <p style={{color:"#e53935",fontSize:12,marginBottom:10}}>{authError}</p>}
+                <button onClick={signIn} disabled={authLoading} style={{width:"100%",padding:"12px",background:"linear-gradient(135deg,#59B88D,#3F9FFF)",border:"none",borderRadius:11,color:"white",fontSize:14,cursor:"pointer",fontFamily:"inherit"}}>
+                  {authLoading ? "⏳ ..." : (authMode==="login" ? (lang==="it"?"Accedi":"Anmelden") : (lang==="it"?"Registrati":"Registrieren"))}
+                </button>
+                {authMode==="signup" && <p style={{color:"#59B88D",fontSize:11,marginTop:10}}>{lang==="it"?"Dopo la registrazione controlla la tua email":"Nach der Registrierung bitte Email bestätigen"}</p>}
+              </div>
+            )}
+
+            {/* LOGGED IN */}
+            {user && (
+              <div>
+                {/* Header */}
+                <div style={{background:"rgba(255,255,255,.82)",borderRadius:17,padding:"14px 18px",marginBottom:12,boxShadow:"0 3px 18px rgba(89,184,141,.12)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <div>
+                    <p style={{margin:0,fontSize:12,color:"#59B88D",fontWeight:"bold"}}>✅ {lang==="it"?"Connesso come":"Angemeldet als"}</p>
+                    <p style={{margin:0,fontSize:11,color:"#626160"}}>{user.email}</p>
+                  </div>
+                  <button onClick={signOut} style={{padding:"6px 14px",background:"none",border:"1.5px solid #b8e8d8",borderRadius:20,color:"#626160",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>
+                    {lang==="it"?"Esci":"Abmelden"}
+                  </button>
+                </div>
+
+                {/* Sub-tabs */}
+                <div style={{display:"flex",gap:6,marginBottom:12,background:"rgba(255,255,255,.5)",borderRadius:13,padding:5}}>
+                  {[
+                    {id:"analyses",label:lang==="it"?"💾 Analisi salvate":"💾 Gespeicherte Analysen"},
+                    {id:"diary",label:lang==="it"?"📖 Diario":"📖 Tagebuch"}
+                  ].map(function(st){return (
+                    <button key={st.id} onClick={function(){setJournalTab(st.id); if(st.id==="analyses")loadAnalyses(); else loadDiary();}} style={{flex:1,padding:"9px 5px",border:"none",borderRadius:9,cursor:"pointer",background:journalTab===st.id?"linear-gradient(135deg,#59B88D,#3F9FFF)":"transparent",color:journalTab===st.id?"white":"#626160",fontSize:11.5,fontFamily:"inherit",fontWeight:journalTab===st.id?"bold":"normal"}}>
+                      {st.label}
+                    </button>
+                  );})}
+                </div>
+
+                {/* ANALYSES */}
+                {journalTab==="analyses" && (
+                  <div>
+                    <button onClick={loadAnalyses} style={{width:"100%",padding:"10px",background:"rgba(89,184,141,.1)",border:"1px solid #b8e8d8",borderRadius:11,color:"#59B88D",fontSize:12,cursor:"pointer",fontFamily:"inherit",marginBottom:12}}>
+                      🔄 {lang==="it"?"Aggiorna":"Aktualisieren"}
+                    </button>
+                    {analyses.length===0 && (
+                      <div style={{textAlign:"center",padding:30,color:"#59B88D",fontSize:13}}>
+                        {lang==="it"?"Nessuna analisi salvata ancora":"Noch keine gespeicherten Analysen"}
+                      </div>
+                    )}
+                    {analyses.map(function(a){return (
+                      <div key={a.id} style={{background:"rgba(255,255,255,.82)",borderRadius:14,padding:16,marginBottom:10,boxShadow:"0 2px 10px rgba(89,184,141,.1)",borderLeft:"3px solid #59B88D"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                          <span style={{fontWeight:"bold",color:"#626160",fontSize:14}}>{a.topic}</span>
+                          <span style={{fontSize:10,color:"#59B88D"}}>{new Date(a.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <p style={{fontSize:12,color:"#626160",lineHeight:1.6,margin:"0 0 8px",whiteSpace:"pre-wrap"}}>{a.result.substring(0,300)}...</p>
+                        {a.note && <p style={{fontSize:11.5,color:"#59B88D",fontStyle:"italic",margin:"0 0 8px"}}>📝 {a.note}</p>}
+                        <button onClick={function(){deleteAnalysis(a.id);}} style={{padding:"4px 12px",background:"none",border:"1px solid #ffb3b3",borderRadius:10,color:"#e53935",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>
+                          🗑️ {lang==="it"?"Elimina":"Löschen"}
+                        </button>
+                      </div>
+                    );})}
+                  </div>
+                )}
+
+                {/* DIARY */}
+                {journalTab==="diary" && (
+                  <div>
+                    {/* New entry */}
+                    <div style={{background:"rgba(255,255,255,.82)",borderRadius:14,padding:16,marginBottom:12,boxShadow:"0 2px 10px rgba(89,184,141,.1)"}}>
+                      <p style={{color:"#59B88D",fontSize:12,fontWeight:"bold",margin:"0 0 10px"}}>
+                        ✍️ {lang==="it"?"Nuovo appunto:":"Neuer Tagebucheintrag:"}
+                      </p>
+                      <input value={diaryTitle} onChange={function(e){setDiaryTitle(e.target.value);}}
+                        placeholder={lang==="it"?"Titolo (opzionale)":"Titel (optional)"}
+                        style={{width:"100%",padding:"9px 12px",border:"1.5px solid #b8e8d8",borderRadius:10,marginBottom:8,fontSize:13,fontFamily:"inherit",boxSizing:"border-box",background:"white",color:"#626160"}}/>
+                      <textarea value={diaryContent} onChange={function(e){setDiaryContent(e.target.value);}}
+                        placeholder={lang==="it"?"Scrivi le tue riflessioni, intuizioni, esperienze...":"Schreibe deine Erkenntnisse, Gedanken, Erfahrungen..."}
+                        rows={4} style={{width:"100%",padding:"9px 12px",border:"1.5px solid #b8e8d8",borderRadius:10,marginBottom:10,fontSize:13,fontFamily:"inherit",resize:"vertical",boxSizing:"border-box",background:"white",color:"#626160"}}/>
+                      <button onClick={saveDiary} disabled={diaryLoading || !diaryContent.trim()} style={{width:"100%",padding:"10px",background:diaryContent.trim()?"linear-gradient(135deg,#59B88D,#3F9FFF)":"#ccc",border:"none",borderRadius:11,color:"white",fontSize:13,cursor:diaryContent.trim()?"pointer":"default",fontFamily:"inherit"}}>
+                        {diaryLoading ? "⏳..." : "💾 " + (lang==="it"?"Salva appunto":"Eintrag speichern")}
+                      </button>
+                    </div>
+
+                    {/* Diary entries */}
+                    <button onClick={loadDiary} style={{width:"100%",padding:"10px",background:"rgba(89,184,141,.1)",border:"1px solid #b8e8d8",borderRadius:11,color:"#59B88D",fontSize:12,cursor:"pointer",fontFamily:"inherit",marginBottom:12}}>
+                      🔄 {lang==="it"?"Aggiorna":"Aktualisieren"}
+                    </button>
+                    {diaryEntries.length===0 && (
+                      <div style={{textAlign:"center",padding:30,color:"#59B88D",fontSize:13}}>
+                        {lang==="it"?"Nessun appunto ancora":"Noch keine Einträge"}
+                      </div>
+                    )}
+                    {diaryEntries.map(function(d){return (
+                      <div key={d.id} style={{background:"rgba(255,255,255,.82)",borderRadius:14,padding:16,marginBottom:10,boxShadow:"0 2px 10px rgba(89,184,141,.1)",borderLeft:"3px solid #43D3FF"}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+                          <span style={{fontWeight:"bold",color:"#626160",fontSize:13}}>{d.title || (lang==="it"?"Appunto":"Eintrag")}</span>
+                          <span style={{fontSize:10,color:"#59B88D"}}>{new Date(d.created_at).toLocaleDateString()}</span>
+                        </div>
+                        <p style={{fontSize:12.5,color:"#626160",lineHeight:1.7,margin:"0 0 8px",whiteSpace:"pre-wrap"}}>{d.content}</p>
+                        <button onClick={function(){deleteDiary(d.id);}} style={{padding:"4px 12px",background:"none",border:"1px solid #ffb3b3",borderRadius:10,color:"#e53935",fontSize:11,cursor:"pointer",fontFamily:"inherit"}}>
+                          🗑️ {lang==="it"?"Elimina":"Löschen"}
+                        </button>
+                      </div>
+                    );})}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+<div style={{textAlign:"center",marginTop:20}}>
+          <a href="https://www.tamarajost.com" target="_blank" rel="noopener noreferrer"
+            style={{color:"#59B88D",fontSize:10.5,textDecoration:"none",letterSpacing:.5}}>
+            tamarajost.com
+          </a>
+          <span style={{color:"#59B88D",fontSize:10.5}}> · </span>
+          <a href="https://tamarajost.com/produkt/yagercodesession/" target="_blank" rel="noopener noreferrer" style={{color:"#59B88D",fontSize:10.5,textDecoration:"none"}}>Yager Code</a>
+          <span style={{color:"#59B88D",fontSize:10.5}}> · </span>
+          <a href="https://tamarajost.com/bist-du-wirklich-bereit-fuer-eine-veraenderung/" target="_blank" rel="noopener noreferrer" style={{color:"#59B88D",fontSize:10.5,textDecoration:"none"}}>Coaching</a>
+          <span style={{color:"#59B88D",fontSize:10.5}}> · </span>
+          <a href="https://tamarajost.com/silent-subliminal-2/" target="_blank" rel="noopener noreferrer" style={{color:"#59B88D",fontSize:10.5,textDecoration:"none"}}>Silent Subliminals</a>
+
+          <span style={{color:"#59B88D",fontSize:10.5}}> · </span>
+          <a href="https://tamarajost.com/datenschutz-healingapp/" target="_blank" rel="noopener noreferrer" style={{color:"#59B88D",fontSize:10.5,textDecoration:"none"}}>
+            {lang==="it" ? "Privacy" : "Datenschutz"}
+          </a>
+          <span style={{color:"#59B88D",fontSize:10.5}}> · </span>
+          <a href="https://tamarajost.com/datenschutz-healingapp/" target="_blank" rel="noopener noreferrer" style={{color:"#59B88D",fontSize:10.5,textDecoration:"none"}}>
+            {lang==="it" ? "Termini di utilizzo" : "Nutzungsbedingungen"}
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+</script>
+</body>
+</html>
