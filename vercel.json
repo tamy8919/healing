@@ -13,3 +13,4 @@
     { "source": "/api/delete-account", "destination": "/api/delete-account.js" }
   ]
 }
+
