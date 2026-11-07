@@ -34,6 +34,11 @@ export default async function handler(req, res) {
       if (!r.ok) throw new Error(table + ' ' + r.status);
     }
 
+    // 2b) Meldungen und Feedback dieser Person löschen (falls die Tabelle existiert, sonst weiter)
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/ai_reports?user_id=eq.${id}`, { method: 'DELETE', headers: { ...svc, Prefer: 'return=minimal' } });
+    } catch (e) { /* nicht kritisch */ }
+
     // 3) Konto löschen
     const d = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, { method: 'DELETE', headers: svc });
     if (!d.ok) throw new Error('user ' + d.status);

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Konto löschen</title>
+<style>
+  body { font-family: Georgia, serif; max-width: 800px; margin: 0 auto; padding: 32px 18px; color: #333; line-height: 1.75; background: #f9f9f9; }
+  h1 { color: #59B88D; font-size: 25px; font-weight: normal; border-bottom: 2px solid #59B88D; padding-bottom: 10px; }
+  h2 { color: #626160; font-size: 17.5px; margin-top: 0; }
+  h3 { color: #59B88D; font-size: 14.5px; margin-bottom: 4px; }
+  p { margin: 8px 0; } ul { margin: 6px 0; padding-left: 20px; }
+  .section { background: white; border-radius: 12px; padding: 22px; margin-bottom: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+  .logo { text-align: center; font-size: 38px; margin-bottom: 6px; }
+  .address { background: #f0faf5; border-left: 3px solid #59B88D; padding: 12px 16px; border-radius: 8px; margin: 10px 0; }
+  a { color: #3F9FFF; } .date { color: #999; font-size: 12px; text-align: right; }
+  .lang { text-align: center; margin: 8px 0 18px; font-size: 14px; }
+  .lang a { margin: 0 10px; color: #59B88D; font-weight: bold; text-decoration: none; }
+  .foot { text-align: center; margin-top: 26px; color: #59B88D; font-size: 12px; }
+  .foot a { color: #59B88D; }
+
+  body.lang-de .l-it { display: none; }
+  body.lang-it .l-de { display: none; }
+  .switch { text-align: right; font-size: 12px; margin: 0 0 8px; }
+  .switch a { color: #999; text-decoration: none; cursor: pointer; }
+</style>
+</head>
+<body class="lang-de">
+<script>
+(function(){
+  var h=(location.hash||'').replace('#','').toLowerCase();
+  var l=(h==='it'||h==='de')?h:(((navigator.language||'de').toLowerCase().indexOf('it')===0)?'it':'de');
+  var T={de:"Konto löschen – Seele · Körper · Heilung", it:"Eliminare l'account – Anima · Corpo · Guarigione"};
+  function set(x){document.body.className='lang-'+x;document.documentElement.lang=x;document.title=T[x];}
+  window.setLang=function(x){history.replaceState(null,'','#'+x);set(x);window.scrollTo(0,0);};
+  set(l);
+})();
+</script>
+<noscript><style>body .l-it, body .l-de { display: block !important; }</style></noscript>
+
+<div class="logo">🌸</div>
+<p class="switch"><a class="l-de" onclick="setLang('it')">Italiano</a><a class="l-it" onclick="setLang('de')">Deutsch</a></p>
+
+<div class="l-de">
+<h1>Konto löschen</h1>
+<p class="date">Stand: November 2026</p>
+
+<div class="section"><h2>So löschst du dein Konto</h2>
+<h3>Variante 1: direkt in der App (sofort)</h3>
+<ol>
+  <li>Öffne die App „Seele · Körper · Heilung“ und melde dich an.</li>
+  <li>Gehe auf <strong>Mein Bereich</strong>.</li>
+  <li>Scrolle ganz nach unten und tippe auf <strong>„Konto und alle Daten löschen“</strong>.</li>
+  <li>Bestätige mit <strong>„Ja, endgültig löschen“</strong>.</li>
+</ol>
+<p>Dein Konto und alle damit verbundenen Daten werden sofort und endgültig gelöscht.</p>
+<h3>Variante 2: per E-Mail (wenn du keinen Zugang mehr hast)</h3>
+<p>Schreibe an <a href="mailto:info.tamarajost@gmail.com?subject=Konto%20l%C3%B6schen">info.tamarajost@gmail.com</a> mit dem Betreff „Konto löschen“, am besten von der E-Mail-Adresse, mit der du dich registriert hast (oder gib sie an). Wir bestätigen deine Identität und löschen dein Konto innerhalb von 30 Tagen, in der Regel deutlich schneller.</p></div>
+
+<div class="section"><h2>Was wird gelöscht?</h2>
+<ul>
+  <li>Dein Konto und die Anmeldedaten (E-Mail-Adresse, bei Google-Anmeldung der Name)</li>
+  <li>Gespeicherte Analysen und Notizen, Tagebucheinträge und Profil-Hinweise</li>
+  <li>Guthaben und Abo-Status in der App</li>
+  <li>Meldungen und Feedback, die mit deinem Konto verknüpft sind</li>
+</ul>
+<p>Technische Sicherheitsdaten (zum Beispiel gekürzte Werte für das Anfrage-Limit) werden automatisch nach wenigen Tagen entfernt. Gesetzliche Aufbewahrungspflichten, etwa für Zahlungsdaten, bleiben bei den jeweiligen Zahlungsanbietern wie Google Play bestehen.</p>
+<p><strong>Abos und Käufe:</strong> Ein Abonnement über Google Play endet nicht automatisch, wenn du dein Konto löschst. Bitte kündige es zusätzlich im Google Play Store unter „Zahlungen und Abos“.</p></div>
+
+<div class="section"><h2>Fragen?</h2>
+<p>Schreibe uns: <a href="mailto:info.tamarajost@gmail.com">info.tamarajost@gmail.com</a>. Mehr zum Umgang mit deinen Daten steht in der <a href="/datenschutz.html#de">Datenschutzerklärung</a>.</p></div>
+
+<div class="foot">
+  <a href="/datenschutz.html#de">Datenschutz</a> ·
+  <a href="/nutzungsbedingungen.html#de">Nutzungsbedingungen</a> ·
+  <a href="/impressum.html#de">Impressum</a> ·
+  <a href="/konto-loeschen.html#de">Konto löschen</a><br/>
+  🌸 Seele · Körper · Heilung – eine App von Tamara Jost
+</div>
+</div>
+
+<div class="l-it" lang="it">
+<h1>Eliminare l'account</h1>
+<p class="date">Aggiornato: novembre 2026</p>
+
+<div class="section"><h2>Come eliminare il tuo account</h2>
+<h3>Opzione 1: direttamente nell'app (immediato)</h3>
+<ol>
+  <li>Apri l'app «Anima · Corpo · Guarigione» e accedi.</li>
+  <li>Vai su <strong>La mia area</strong>.</li>
+  <li>Scorri fino in fondo e tocca <strong>«Elimina account e tutti i dati»</strong>.</li>
+  <li>Conferma con <strong>«Sì, elimina definitivamente»</strong>.</li>
+</ol>
+<p>Il tuo account e tutti i dati collegati vengono eliminati subito e in modo definitivo.</p>
+<h3>Opzione 2: via e-mail (se non hai più accesso)</h3>
+<p>Scrivi a <a href="mailto:info.tamarajost@gmail.com?subject=Eliminare%20account">info.tamarajost@gmail.com</a> con l'oggetto «Eliminare account», possibilmente dall'indirizzo con cui ti sei registrata/o (o indicalo). Verifichiamo la tua identità ed eliminiamo l'account entro 30 giorni, di norma molto prima.</p></div>
+
+<div class="section"><h2>Cosa viene eliminato?</h2>
+<ul>
+  <li>Il tuo account e i dati di accesso (indirizzo e-mail, con l'accesso Google il nome)</li>
+  <li>Analisi e note salvate, voci del diario e note del profilo</li>
+  <li>Credito e stato dell'abbonamento nell'app</li>
+  <li>Segnalazioni e feedback collegati al tuo account</li>
+</ul>
+<p>I dati tecnici di sicurezza (ad esempio valori abbreviati per il limite di richieste) vengono rimossi automaticamente dopo pochi giorni. Gli obblighi legali di conservazione, ad esempio per i dati di pagamento, restano presso i rispettivi fornitori come Google Play.</p>
+<p><strong>Abbonamenti e acquisti:</strong> Un abbonamento tramite Google Play non termina automaticamente quando elimini l'account. Disdicilo inoltre nel Google Play Store alla voce «Pagamenti e abbonamenti».</p></div>
+
+<div class="section"><h2>Domande?</h2>
+<p>Scrivici: <a href="mailto:info.tamarajost@gmail.com">info.tamarajost@gmail.com</a>. Maggiori informazioni sul trattamento dei tuoi dati nell'<a href="/datenschutz.html#it">informativa sulla privacy</a>.</p></div>
+
+<div class="foot">
+  <a href="/datenschutz.html#it">Privacy</a> ·
+  <a href="/nutzungsbedingungen.html#it">Condizioni d'uso</a> ·
+  <a href="/impressum.html#it">Note legali</a> ·
+  <a href="/konto-loeschen.html#it">Elimina account</a><br/>
+  🌸 Anima · Corpo · Guarigione – un'app di Tamara Jost
+</div>
+</div>
+</body>
+</html>

@@ -1,36 +1,20 @@
 {
   "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://tamarajost.com https://www.tamarajost.com"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
-        }
-      ]
-    }
+    { "source": "/(.*)", "headers": [
+      { "key": "Content-Security-Policy", "value": "frame-ancestors 'self' https://tamarajost.com https://www.tamarajost.com" },
+      { "key": "Content-Security-Policy-Report-Only", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://iykiupticluvapywqcpl.supabase.co wss://iykiupticluvapywqcpl.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'" },
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+      { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+    ] },
+    { "source": "/sw.js", "headers": [
+      { "key": "Cache-Control", "value": "no-cache" },
+      { "key": "Service-Worker-Allowed", "value": "/" }
+    ] }
   ],
   "rewrites": [
-    {
-      "source": "/api/chat",
-      "destination": "/api/chat.js"
-    },
-    {
-      "source": "/api/delete-account",
-      "destination": "/api/delete-account.js"
-    }
+    { "source": "/api/chat", "destination": "/api/chat.js" },
+    { "source": "/api/delete-account", "destination": "/api/delete-account.js" },
+    { "source": "/api/report", "destination": "/api/report.js" }
   ]
 }
-
