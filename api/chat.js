@@ -10,6 +10,10 @@ const PUBLIC_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_3o6Eq7EHKDkI
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5';
 
+// Gründerin / Inhaberin: E-Mail-Adressen (kommagetrennt, in Vercel als OWNER_EMAILS) bekommen KEINE Limits.
+// Die Adresse wird vom Anmeldedienst geprüft und muss bestätigt sein.
+const OWNER_EMAILS = (process.env.OWNER_EMAILS || '').toLowerCase().split(',').map((x) => x.trim()).filter(Boolean);
+
 const num = (v, d) => { const n = parseInt(v, 10); return Number.isFinite(n) && n > 0 ? n : d; };
 const LIMITS = {
   anon: { hour: num(process.env.LIMIT_ANON_HOUR, 10), day: num(process.env.LIMIT_ANON_DAY, 25) },
@@ -136,11 +140,16 @@ async function identify(req) {
       const r = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: { apikey: PUBLIC_KEY, Authorization: 'Bearer ' + token } });
       if (r.ok) {
         const u = await r.json();
-        if (u && typeof u.id === 'string' && /^[0-9a-f-]{36}$/i.test(u.id)) return { bucket: 'user:' + u.id, isUser: true, userId: u.id };
+        if (u && typeof u.id === 'string' && /^[0-9a-f-]{36}$/i.test(u.id)) {
+          const mail = String(u.email || '').toLowerCase();
+          const confirmed = !!(u.email_confirmed_at || u.confirmed_at);
+          const isOwner = confirmed && !!mail && OWNER_EMAILS.indexOf(mail) >= 0;
+          return { bucket: 'user:' + u.id, isUser: true, userId: u.id, isOwner: isOwner };
+        }
       }
     } catch (e) { /* als anonym behandeln */ }
   }
-  return { bucket: anonBucket, isUser: false, userId: null };
+  return { bucket: anonBucket, isUser: false, userId: null, isOwner: false };
 }
 
 // ---- Kontingente (Gratis / Guthaben / Premium), gebucht in Supabase ----
@@ -168,14 +177,14 @@ async function refundQuota(who, kind, quota) {
 async function main(req, res) {
   // Kein CORS nötig: Die App ruft ihren eigenen Server auf.
   if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed', version: 'chat-2026-11-08a' });
+  if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed', version: 'chat-2026-11-08b' });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'not_configured' });
 
   const v = validate(req.body);
   if (v.error) return res.status(v.error === 'too_long' ? 413 : 400).json({ error: v.error });
 
   const who = await identify(req);
-  const blocked = await checkLimits(who.bucket, who.isUser);
+  const blocked = who.isOwner ? null : await checkLimits(who.bucket, who.isUser);
   if (blocked) {
     res.setHeader('Retry-After', blocked === 'hour' ? '3600' : '86400');
     return res.status(429).json({ error: 'rate_limited', scope: blocked });
@@ -184,7 +193,7 @@ async function main(req, res) {
   // Kontingent buchen (nur Analyse und Chat; Mondkalender bleibt frei)
   const kind = (v.mode === 'healing' || v.mode === 'translate') ? 'analysis' : v.mode === 'chat' ? 'chat' : null;
   let quota = null;
-  if (kind) {
+  if (kind && !who.isOwner) {
     quota = await consumeQuota(who, kind);
     if (quota && quota.ok === false) {
       return res.status(402).json({ error: 'quota_exceeded', plan: quota.plan || (who.isUser ? 'free' : 'anon') });
