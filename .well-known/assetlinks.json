@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.tamarajost.healing",
+      "sha256_cert_fingerprints": [
+        "3E:00:20:E5:1F:D1:2F:59:CA:A7:1C:A5:14:97:5A:86:F6:96:EA:24:1A:90:E5:29:42:07:F1:98:70:CE:AA:93"
+      ]
+    }
+  }
+]
