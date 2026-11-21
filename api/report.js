@@ -16,6 +16,37 @@ const svc = () => {
   if (SERVICE_KEY.startsWith('eyJ')) h.Authorization = 'Bearer ' + SERVICE_KEY;
   return h;
 };
+// Optional: E-Mail-Benachrichtigung über Resend (nur aktiv, wenn RESEND_API_KEY und NOTIFY_EMAIL gesetzt sind)
+const esc = (t) => String(t || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+async function notify(row) {
+  const key = process.env.RESEND_API_KEY, to = process.env.NOTIFY_EMAIL;
+  if (!key || !to) return;
+  const labels = { inaccurate: 'Ungenau oder falsch', inappropriate: 'Unangemessen oder verletzend', harmful: 'Gefährlich oder gesundheitsschädlich', other: 'Sonstiges' };
+  const harmful = row.reason === 'harmful';
+  const subject = (harmful ? '⚠️ ' : '') + (row.kind === 'report' ? 'Healing App: Antwort gemeldet' + (row.reason ? ' – ' + labels[row.reason] : '') : 'Healing App: neues Feedback');
+  const html = '<div style="font-family:Georgia,serif;line-height:1.6">'
+    + '<p><b>' + esc(subject) + '</b></p>'
+    + '<p>Sprache: ' + esc(row.lang) + (row.mode ? ' · Bereich: ' + esc(row.mode) : '') + '</p>'
+    + (row.comment ? '<p><b>Kommentar:</b><br>' + esc(row.comment).replace(/\n/g, '<br>') + '</p>' : '')
+    + (row.answer ? '<p><b>Gemeldete Antwort:</b><br>' + esc(row.answer.slice(0, 2500)).replace(/\n/g, '<br>') + '</p>' : '')
+    + (row.contact_email ? '<p><b>Kontakt:</b> ' + esc(row.contact_email) + '</p>' : '')
+    + '<p style="color:#888">Alle Meldungen: Supabase → Table Editor → ai_reports</p></div>';
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 6000);
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: process.env.NOTIFY_FROM || 'Healing App <onboarding@resend.dev>', to: [to], subject, html }),
+      signal: ctrl.signal,
+    });
+    if (!r.ok) console.error('report-mail', r.status);
+  } catch (e) {
+    console.error('report-mail', e && e.message);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 const clean = (v, n) => (typeof v === 'string' ? v.replace(/\u0000/g, '').trim().slice(0, n) : '');
 
 async function identify(req) {
@@ -81,6 +112,7 @@ async function main(req, res) {
     return res.status(500).json({ error: 'save_failed' });
   }
   fetch(`${SUPABASE_URL}/rest/v1/api_usage`, { method: 'POST', headers: { ...svc(), Prefer: 'return=minimal' }, body: JSON.stringify({ bucket: who.bucket }) }).catch(() => {});
+  await notify(row);
   return res.status(200).json({ ok: true });
 }
 
