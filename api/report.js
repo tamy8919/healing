@@ -6,7 +6,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://iykiupticluvapywqcpl.s
 const PUBLIC_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_3o6Eq7EHKDkII_X4CwUhkw_p-ealctr';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const KINDS = ['report', 'feedback'];
+const KINDS = ['report', 'feedback', 'tester'];
+const RATING_KEYS = ['design', 'usability', 'answers', 'trust'];
+const FEATURE_KEYS = ['login', 'analysis', 'lexicon', 'chat', 'card', 'moon', 'journal', 'translate', 'report', 'dark', 'lang'];
 const REASONS = ['inaccurate', 'inappropriate', 'harmful', 'other'];
 const MODES = ['healing', 'chat', 'moon_advice', 'moon_desc'];
 const LIMIT_PER_HOUR = 6;
@@ -23,6 +25,33 @@ async function notify(row) {
   if (!key || !to) return;
   const labels = { inaccurate: 'Ungenau oder falsch', inappropriate: 'Unangemessen oder verletzend', harmful: 'Gefährlich oder gesundheitsschädlich', other: 'Sonstiges' };
   const harmful = row.reason === 'harmful';
+  if (row.kind === 'tester') {
+    const d = row.details || {}, rt = d.ratings || {};
+    const vals = Object.values(rt);
+    const avg = vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '–';
+    const names = { design: 'Design', usability: 'Bedienung', answers: 'Qualität der Antworten', trust: 'Vertrauen' };
+    const html2 = '<div style="font-family:Georgia,serif;line-height:1.6">'
+      + '<p><b>📝 Neues Tester-Feedback (Ø ' + avg + ' von 5)</b></p>'
+      + '<p>' + Object.keys(rt).map((k) => esc(names[k] || k) + ': ' + '★'.repeat(rt[k]) + '☆'.repeat(5 - rt[k])).join('<br>') + '</p>'
+      + (d.tested && d.tested.length ? '<p><b>Getestet:</b> ' + esc(d.tested.join(', ')) + '</p>' : '')
+      + (d.likes ? '<p><b>👍 Gefällt:</b><br>' + esc(d.likes).replace(/\n/g, '<br>') + '</p>' : '')
+      + (d.improve ? '<p><b>🔧 Verbessern:</b><br>' + esc(d.improve).replace(/\n/g, '<br>') + '</p>' : '')
+      + (d.name || row.contact_email ? '<p><b>Kontakt:</b> ' + esc(d.name) + ' ' + esc(row.contact_email) + '</p>' : '')
+      + (d.device ? '<p style="color:#888;font-size:12px">' + esc(d.device) + '</p>' : '')
+      + '<p style="color:#888">Sprache: ' + esc(row.lang) + ' · Alle Rückmeldungen: in der App unten „📊 Auswertung“</p></div>';
+    const c2 = new AbortController();
+    const t2 = setTimeout(() => c2.abort(), 6000);
+    try {
+      const r2 = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: process.env.NOTIFY_FROM || 'Healing App <onboarding@resend.dev>', to: [to], subject: '📝 Healing App: Tester-Feedback (Ø ' + avg + ')', html: html2 }),
+        signal: c2.signal,
+      });
+      if (!r2.ok) console.error('report-mail', r2.status);
+    } catch (e) { console.error('report-mail', e && e.message); } finally { clearTimeout(t2); }
+    return;
+  }
   const subject = (harmful ? '⚠️ ' : '') + (row.kind === 'report' ? 'Healing App: Antwort gemeldet' + (row.reason ? ' – ' + labels[row.reason] : '') : 'Healing App: neues Feedback');
   const html = '<div style="font-family:Georgia,serif;line-height:1.6">'
     + '<p><b>' + esc(subject) + '</b></p>'
@@ -85,13 +114,23 @@ async function main(req, res) {
   if (!kind) return res.status(400).json({ error: 'bad_request' });
   const lang = b.lang === 'it' ? 'it' : 'de';
   const comment = clean(b.comment, 1000);
-  let reason = null, mode = null, answer = null, email = null;
+  let reason = null, mode = null, answer = null, email = null, details = null;
 
   if (kind === 'report') {
     reason = REASONS.includes(b.reason) ? b.reason : null;
     mode = MODES.includes(b.mode) ? b.mode : null;
     answer = clean(b.answer, 6000);
     if (!reason || !answer) return res.status(400).json({ error: 'bad_request' });
+  } else if (kind === 'tester') {
+    const rin = b.ratings && typeof b.ratings === 'object' ? b.ratings : {};
+    const ratings = {};
+    RATING_KEYS.forEach((k) => { const v = Number(rin[k]); if (Number.isInteger(v) && v >= 1 && v <= 5) ratings[k] = v; });
+    const tested = Array.isArray(b.tested) ? b.tested.filter((x) => FEATURE_KEYS.includes(x)) : [];
+    const likes = clean(b.likes, 1500), improve = clean(b.improve, 1500);
+    if (!Object.keys(ratings).length && !tested.length && !likes && !improve) return res.status(400).json({ error: 'bad_request' });
+    const e2 = clean(b.email, 200);
+    if (e2 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e2)) email = e2;
+    details = { ratings, tested, likes, improve, name: clean(b.name, 80), device: clean(b.device, 300) };
   } else {
     if (!comment) return res.status(400).json({ error: 'bad_request' });
     const e = clean(b.email, 200);
@@ -106,6 +145,7 @@ async function main(req, res) {
   }
 
   const row = { kind, user_id: who.userId, mode, lang, reason, comment: comment || null, answer, contact_email: email };
+  if (details) row.details = details;
   const r = await fetch(`${SUPABASE_URL}/rest/v1/ai_reports`, { method: 'POST', headers: { ...svc(), Prefer: 'return=minimal' }, body: JSON.stringify(row) });
   if (!r.ok) {
     console.error('report-insert', r.status);

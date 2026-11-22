@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import chat from './api/chat.js';
 import report from './api/report.js';
 import deleteAccount from './api/delete-account.js';
+import feedbackAdmin from './api/feedback-admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(__dirname, 'public');
@@ -30,6 +31,7 @@ const wrap = (h) => async (req, res) => {
 app.all('/api/chat', wrap(chat));
 app.all('/api/report', wrap(report));
 app.all('/api/delete-account', wrap(deleteAccount));
+app.all('/api/feedback-admin', wrap(feedbackAdmin));
 app.use('/api', (req, res) => res.status(404).json({ error: 'not_found' }));
 
 // Digital Asset Links für die Android-App
