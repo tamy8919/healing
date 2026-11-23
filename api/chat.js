@@ -59,7 +59,7 @@ const AUFSTELLUNG = {
 // ---- Erlaubte Arten von Anfragen ----
 const MODES = {
   healing:     { tokens: 2500, maxMsgs: 1,  maxUser: 6000, system: (l) => HEALING_SYSTEM[l] },
-  chat:        { tokens: 900,  maxMsgs: 20, maxUser: 2000, system: (l) => HEALING_SYSTEM[l] },
+  chat:        { tokens: 900,  maxMsgs: 15, maxUser: 2000, system: (l) => HEALING_SYSTEM[l] },
   translate:   { tokens: 3500, maxMsgs: 1,  maxUser: 14000, system: (l) => TRANSLATE_SYSTEM[l] },
   aufstellung_elemente:  { tokens: 200,  maxMsgs: 1, maxUser: 800, system: (l) => AUFSTELLUNG.elemente[l] },
   aufstellung_dialog:    { tokens: 800,  maxMsgs: 8, maxUser: 3500, maxTotal: 24000, system: (l) => AUFSTELLUNG.dialog[l] },
@@ -106,9 +106,9 @@ function memCount(bucket, sinceMs) {
   memHits.set(bucket, arr);
   return arr.filter((t) => t > sinceMs).length;
 }
-async function countRows(bucket, sinceISO) {
+async function countRows(bucket, sinceISO, excludePaid) {
   const url = `${SUPABASE_URL}/rest/v1/api_usage?select=id&created_at=gte.${encodeURIComponent(sinceISO)}` +
-    (bucket ? `&bucket=eq.${encodeURIComponent(bucket)}` : '') + '&limit=1';
+    (bucket ? `&bucket=eq.${encodeURIComponent(bucket)}` : '') + (excludePaid ? '&bucket=not.like.' + encodeURIComponent('paid:*') : '') + '&limit=1';
   const r = await fetch(url, { headers: { ...svcHeaders(), Prefer: 'count=exact' } });
   if (!r.ok) throw new Error('count ' + r.status);
   const cr = r.headers.get('content-range') || '';
@@ -116,15 +116,28 @@ async function countRows(bucket, sinceISO) {
   if (!Number.isFinite(n)) throw new Error('count parse');
   return n;
 }
-async function checkLimits(bucket, isUser) {
+// Hat die Person ein bezahltes Abo (Premium, Pro, Gründerin …)? Dann zählt sie nicht für die Gesamt-Grenze der Gratis-Nutzung.
+async function isPaid(userId) {
+  if (!SERVICE_KEY || !userId) return false;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/subscriptions?select=plan,current_period_end&user_id=eq.${encodeURIComponent(userId)}&status=eq.active&limit=1`, { headers: svcHeaders() });
+    if (!r.ok) return false;
+    const rows = await r.json();
+    const row = Array.isArray(rows) && rows[0];
+    if (!row || !row.plan || row.plan === 'free') return false;
+    return !row.current_period_end || new Date(row.current_period_end).getTime() > Date.now();
+  } catch (e) { return false; }
+}
+async function checkLimits(bucketIn, isUser, paid) {
+  const bucket = paid ? 'paid:' + bucketIn : bucketIn;
   const lim = isUser ? LIMITS.user : LIMITS.anon;
   const now = Date.now();
   const hourAgo = new Date(now - 3600000).toISOString();
   const dayAgo = new Date(now - 86400000).toISOString();
   if (SERVICE_KEY) {
     try {
-      const [h, d, g] = await Promise.all([countRows(bucket, hourAgo), countRows(bucket, dayAgo), countRows(null, dayAgo)]);
-      if (g >= LIMITS.globalDay) return 'global';
+      const [h, d, g] = await Promise.all([countRows(bucket, hourAgo), countRows(bucket, dayAgo), paid ? Promise.resolve(0) : countRows(null, dayAgo, true)]);
+      if (!paid && g >= LIMITS.globalDay) return 'global';
       if (h >= lim.hour) return 'hour';
       if (d >= lim.day) return 'day';
       await fetch(`${SUPABASE_URL}/rest/v1/api_usage`, {
@@ -200,19 +213,23 @@ async function main(req, res) {
   if (v.error) return res.status(v.error === 'too_long' ? 413 : 400).json({ error: v.error });
 
   const who = await identify(req);
-  const blocked = who.isOwner ? null : await checkLimits(who.bucket, who.isUser);
+  const paid = who.isUser && !who.isOwner ? await isPaid(who.userId) : false;
+  const blocked = who.isOwner ? null : await checkLimits(who.bucket, who.isUser, paid);
   if (blocked) {
     res.setHeader('Retry-After', blocked === 'hour' ? '3600' : '86400');
     return res.status(429).json({ error: 'rate_limited', scope: blocked });
   }
 
   // Kontingent buchen (nur Analyse und Chat; Mondkalender bleibt frei)
-  const kind = (v.mode === 'healing' || v.mode === 'translate' || (v.mode === 'aufstellung_dialog' && v.messages.length === 1)) ? 'analysis' : v.mode === 'chat' ? 'chat' : null;
+  // Kosten in Credits stehen in der Datenbank (credit_costs): Chat 1, Analyse 4, Aufstellung 8
+  const kind = (v.mode === 'aufstellung_dialog' && v.messages.length === 1) ? 'aufstellung'
+    : (v.mode === 'healing' || v.mode === 'translate') ? 'analysis'
+    : v.mode === 'chat' ? 'chat' : null;
   let quota = null;
   if (kind && !who.isOwner) {
     quota = await consumeQuota(who, kind);
     if (quota && quota.ok === false) {
-      return res.status(402).json({ error: 'quota_exceeded', plan: quota.plan || (who.isUser ? 'free' : 'anon') });
+      return res.status(402).json({ error: 'quota_exceeded', plan: quota.plan || (who.isUser ? 'free' : 'anon'), kind: kind, cost: quota.cost || 0 });
     }
   }
 
@@ -232,12 +249,29 @@ async function main(req, res) {
       // Der Grund steckt direkt im Feld "error", damit ihn auch ältere App-Versionen anzeigen
       return res.status(502).json({ error: 'upstream_' + r.status + (tag ? '_' + tag : ''), upstream_status: r.status, upstream_type: upType || null });
     }
+    logUsage(v, data && data.usage);
     return res.status(200).json({ content: data.content });
   } catch (e) {
     console.error('chat', e && e.message);
     await refundQuota(who, kind, quota);
     return res.status(500).json({ error: 'server_error' });
   }
+}
+
+// Verbrauch mitschreiben (nur Zahlen, keine Texte und keine Personen). Fehler hier stören die Antwort nie.
+function logUsage(v, usage) {
+  try {
+    if (!SERVICE_KEY || !usage) return;
+    fetch(`${SUPABASE_URL}/rest/v1/ai_usage_log`, {
+      method: 'POST',
+      headers: { ...svcHeaders(), Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        mode: v.mode, model: MODEL, steps: v.messages.length,
+        input_tokens: usage.input_tokens || 0, output_tokens: usage.output_tokens || 0,
+        cache_read_tokens: usage.cache_read_input_tokens || 0,
+      }),
+    }).catch(() => {});
+  } catch (e) { /* bewusst ignoriert */ }
 }
 
 export default async function handler(req, res) {
